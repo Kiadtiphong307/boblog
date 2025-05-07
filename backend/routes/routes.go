@@ -1,15 +1,16 @@
-// package routes
+package routes
 
-// import (
-//     "github.com/gofiber/fiber/v2"
+import (
+	"blog-db/controller"
+    "github.com/gofiber/fiber/v2"
 
-// )
+)
 
-// func RegisterUserRoutes(app *fiber.App) {
-//     users := app.Group("/users")
-//     users.Get("/", handlers.GetUsers)
-//     users.Get("/:id", handlers.GetUser)
-//     users.Post("/", handlers.CreateUser)
-//     users.Put("/:id", handlers.UpdateUser)
-//     users.Delete("/:id", handlers.DeleteUser)
-// }
+func RegisterUserRoutes(app *fiber.App) {
+    users := app.Group("/users")
+    users.Get("/", controller.GetUsers)
+    users.Get("/:id", controller.GetUser)
+    users.Post("/", controller.CreateUser)
+    users.Put("/:id", controller.UpdateUser)
+    users.Delete("/:id", controller.DeleteUser)
+}

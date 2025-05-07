@@ -6,7 +6,7 @@ type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Username     string    `gorm:"unique" json:"username"`
 	Email        string    `gorm:"unique" json:"email"`
-	PasswordHash string    `json:"-"`
+	PasswordHash string    `gorm:"not null" json:"password"`
 	Bio          *string   `gorm:"default:null" json:"bio,omitempty"`
 	Image        *string   `gorm:"default:null" json:"image,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
