@@ -12,6 +12,7 @@ services:
       - .env
     volumes:
       - ./backend:/app
+      - ./.env:/app/.env 
     working_dir: /app
     command: go run main.go
 

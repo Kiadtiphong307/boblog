@@ -1,22 +1,21 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"blog-db/database"
+	"blog-db/model"
 )
 
 func main() {
 	app := fiber.New()
 
-	// Define a simple route
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
+	database.Init()
+	database.DB.AutoMigrate(&models.User{})
 
-	// Start the server on port 3000
-	err := app.Listen(":3000")
-	if err != nil {
-		fmt.Println("Error starting server:", err)
-	}
+    app.Get("/", func(c *fiber.Ctx) error {
+        return c.SendString("Welcome to Go + Fiber + MySQL")
+    })
+
+	app.Listen(":8080")
 
 }
