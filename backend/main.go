@@ -5,6 +5,7 @@ import (
 	"blog-db/database"
 	"blog-db/models"
 	"blog-db/routes"
+	"blog-db/middleware"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
         return c.SendString("Welcome to Go + Fiber + MySQL")
     })
 
+	routes.RegisterAuthRoutes(app)
+	app.Use(middleware.Protected())
 	routes.RegisterUserRoutes(app)
 
 	app.Listen(":8080")

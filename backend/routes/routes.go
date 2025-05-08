@@ -3,18 +3,22 @@ package routes
 import (
 	"blog-db/controller"
     "github.com/gofiber/fiber/v2"
+    "blog-db/middleware"
+
 )
 
-func RegisterUserRoutes(app *fiber.App) {
-    // Public routes
-    app.Post("/register", controller.Register)
-    app.Post("/login", controller.Login)
+func RegisterAuthRoutes(app *fiber.App) {
+    auth := app.Group("/auth")
+    auth.Post("/register",  controller.Register)
+    auth.Post("/login", controller.Login)
+}
 
-    // Protected routes
-    users := app.Group("/users", controller.JWTMiddleware())
+func RegisterUserRoutes(app *fiber.App) {
+    users := app.Group("/users").Use(middleware.Protected())
     users.Get("/", controller.GetUsers)
     users.Get("/:id", controller.GetUser)
     users.Post("/", controller.CreateUser)
     users.Put("/:id", controller.UpdateUser)
     users.Delete("/:id", controller.DeleteUser)
 }
+

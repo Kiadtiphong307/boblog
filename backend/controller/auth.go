@@ -1,109 +1,71 @@
 package controller
 
 import (
-	"blog-db/database"
-	"blog-db/models"
-	"time"
-	"os"
-	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
-	"github.com/golang-jwt/jwt/v5"
+    "blog-db/database"
+    "blog-db/models"
+    "blog-db/utils"
+    "github.com/gofiber/fiber/v2"
+    "golang.org/x/crypto/bcrypt"
+    "github.com/golang-jwt/jwt/v5"
+    "time"
+    "log"
 )
 
-type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
+var jwtSecret = []byte("secret") // 👉 เปลี่ยนเป็น os.Getenv("JWT_SECRET") ภายหลัง
 
-type RegisterInput struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
+// Register
 func Register(c *fiber.Ctx) error {
-	var input RegisterInput
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
-	}
+    var input models.User
+    if err := c.BodyParser(&input); err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+    }
 
-	// Hash password
-	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
-	}
+    // เช็ค email ซ้ำ
+    var existing models.User
+    database.DB.Where("email = ?", input.Email).First(&existing)
+    if existing.ID != 0 {
+        return c.Status(400).JSON(utils.ErrorResponse("Email already in use"))
+    }
 
-	user := models.User{
-		Username:     input.Username,
-		Email:        input.Email,
-		PasswordHash: string(hash),
-	}
+    hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.PasswordHash), 14)
+    input.PasswordHash = string(hashedPassword)
 
-	if err := database.DB.Create(&user).Error; err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Email or Username already exists"})
-	}
+    database.DB.Create(&input)
+    input.PasswordHash = ""
 
-	return c.JSON(fiber.Map{"message": "Registration successful"})
+    return c.Status(201).JSON(utils.SuccessResponse(input, "User registered"))
 }
 
 func Login(c *fiber.Ctx) error {
-	var input LoginInput
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
-	}
+    var input models.User
+    if err := c.BodyParser(&input); err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+    }
 
-	var user models.User
-	if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid email or password"})
-	}
+    var user models.User
+    database.DB.Where("email = ?", input.Email).First(&user)
+    if user.ID == 0 {
+        return c.Status(400).JSON(utils.ErrorResponse("Invalid email or password"))
+    }
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid email or password"})
-	}
+    if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.PasswordHash)); err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("Invalid email or password"))
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 72).Unix(),
-	})
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "secret" // fallback
-	}
-	tokenString, err := token.SignedString([]byte(secret))
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to generate token"})
-	}
+    // ✅ Create JWT
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+        "id":    user.ID,
+        "email": user.Email,
+        "exp":   time.Now().Add(time.Hour * 72).Unix(),
+    })
 
-	return c.JSON(fiber.Map{"token": tokenString})
-}
+    tokenString, err := token.SignedString(jwtSecret)
+    if err != nil {
+        log.Println("JWT error:", err)
+        return c.SendStatus(500)
+    }
 
-func JWTMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		tokenString := c.Get("Authorization")
-		if tokenString == "" {
-			return c.Status(401).JSON(fiber.Map{"error": "Missing or invalid token"})
-		}
-		if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-			tokenString = tokenString[7:]
-		}
-		secret := os.Getenv("JWT_SECRET")
-		if secret == "" {
-			secret = "secret"
-		}
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fiber.NewError(fiber.StatusUnauthorized, "Unexpected signing method")
-			}
-			return []byte(secret), nil
-		})
-		if err != nil || !token.Valid {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid token"})
-		}
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return c.Status(401).JSON(fiber.Map{"error": "Invalid token claims"})
-		}
-		c.Locals("user_id", claims["user_id"])
-		return c.Next()
-	}
+    return c.JSON(utils.SuccessResponse(fiber.Map{
+        "token": tokenString,
+    }, "Login successful"))
 }

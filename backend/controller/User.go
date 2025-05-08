@@ -4,146 +4,99 @@ import (
 	"blog-db/database"
 	"blog-db/models"
 	"log"
-
+	"github.com/go-playground/validator/v10"
+	"blog-db/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
+var validate = validator.New()
+
+// GetUsers retrieves all users from the database
 func GetUsers(c *fiber.Ctx) error {
-	var users []models.User
-	if err := database.DB.Find(&users).Error; err != nil {
-		log.Println("❌ Failed to fetch users:", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch users"})
-	}
-
-	log.Printf("✅ Found %d user(s)", len(users))
-
-	var safeUsers []fiber.Map
-	for _, u := range users {
-		safeUsers = append(safeUsers, fiber.Map{
-			"id":        u.ID,
-			"username":  u.Username,
-			"email":     u.Email,
-			"bio":       u.Bio,
-			"image":     u.Image,
-			"createdAt": u.CreatedAt,
-			"updatedAt": u.UpdatedAt,
-		})
-	}
-
-	if safeUsers == nil {
-		safeUsers = []fiber.Map{}
-	}
-	return c.JSON(safeUsers)
+    var users []models.User
+    if result := database.DB.Find(&users); result.Error != nil {
+        log.Println("❌ Error getting users:", result.Error)
+        return c.Status(500).JSON(utils.ErrorResponse("Failed to get users"))
+    }
+    log.Println("✅ Retrieved all users")
+    return c.JSON(utils.SuccessResponse(users, "Users retrieved successfully"))
 }
 
+// GetUser retrieves a user by ID
 func GetUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	if err := database.DB.First(&user, id).Error; err != nil {
-		log.Printf("❌ User ID %s not found", id)
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
-	}
-
-	log.Printf("✅ Found user ID %s", id)
-
-	return c.JSON(fiber.Map{
-		"id":        user.ID,
-		"username":  user.Username,
-		"email":     user.Email,
-		
-		"bio":       user.Bio,
-		"image":     user.Image,
-		"createdAt": user.CreatedAt,
-		"updatedAt": user.UpdatedAt,
-	})
-			
+    id := c.Params("id")
+    var user models.User
+    result := database.DB.First(&user, id)
+    if result.Error != nil {
+        log.Println("❌ User not found with ID:", id)
+        return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+    }
+    log.Println("✅ Retrieved user with ID:", id)
+    return c.JSON(utils.SuccessResponse(user, "User retrieved successfully"))
 }
 
+// CreateUser creates a new user
 func CreateUser(c *fiber.Ctx) error {
-	var user models.User
-	if err := c.BodyParser(&user); err != nil {
-		log.Println("❌ Failed to parse request body for user")
-		return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
-	}
-	if err := database.DB.Create(&user).Error; err != nil {
-		log.Println("❌ Failed to create user:", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create user"})
-	}
+    var user models.User
+    if err := c.BodyParser(&user); err != nil {
+        log.Println("❌ Failed to parse request body:", err)
+        return c.Status(400).JSON(utils.ErrorResponse("Cannot parse JSON"))
+    }
 
-	log.Printf("✅ User created: ID %d, Username %s", user.ID, user.Username)
+    // ✅ Validation
+    if err := validate.Struct(&user); err != nil {
+        log.Println("❌ Validation failed:", err)
+        return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
+    }
 
-	return c.Status(201).JSON(fiber.Map{
-		"id":        user.ID,
-		"username":  user.Username,
-		"email":     user.Email,
-		
-		"bio":       user.Bio,
-		"image":     user.Image,
-		"createdAt": user.CreatedAt,
-		"updatedAt": user.UpdatedAt,
-	})
+    if result := database.DB.Create(&user); result.Error != nil {
+        log.Println("❌ Failed to create user:", result.Error)
+        return c.Status(500).JSON(utils.ErrorResponse("Failed to create user"))
+    }
+
+    log.Println("✅ Created new user:", user)
+    return c.Status(201).JSON(utils.SuccessResponse(user, "User created successfully"))
 }
 
+// UpdateUser updates an existing user by ID
 func UpdateUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	if err := database.DB.First(&user, id).Error; err != nil {
-		log.Printf("❌ User ID %s not found for update", id)
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
-	}
+    id := c.Params("id")
+    var user models.User
+    if err := database.DB.First(&user, id).Error; err != nil {
+        log.Println("❌ User not found with ID:", id)
+        return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+    }
 
-	var updateData map[string]interface{}
-	if err := c.BodyParser(&updateData); err != nil {
-		log.Println("❌ Failed to parse update data")
-		return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
-	}
+    var updateData models.User
+    if err := c.BodyParser(&updateData); err != nil {
+        log.Println("❌ Failed to parse update data:", err)
+        return c.Status(400).JSON(utils.ErrorResponse("Cannot parse JSON"))
+    }
 
-	// Update เฉพาะ field ที่ส่งมา
-	if username, ok := updateData["username"].(string); ok && username != "" {
-		user.Username = username
-	}
-	if email, ok := updateData["email"].(string); ok && email != "" {
-		user.Email = email
-	}
-	if bio, ok := updateData["bio"].(string); ok {
-		user.Bio = &bio
-	}
-	if image, ok := updateData["image"].(string); ok {
-		user.Image = &image
-	}
+    // ✅ Validation
+    if err := validate.Struct(&updateData); err != nil {
+        log.Println("❌ Validation failed:", err)
+        return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
+    }
 
-	if err := database.DB.Save(&user).Error; err != nil {
-		log.Printf("❌ Failed to update user ID %s: %v", id, err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to update user"})
-	}
+    user.Username = updateData.Username
+    user.Email = updateData.Email
+    database.DB.Save(&user)
 
-	log.Printf("✅ Updated user ID %s", id)
-
-	return c.JSON(fiber.Map{
-		"id":        user.ID,
-		"username":  user.Username,
-		"email":     user.Email,
-		
-		"bio":       user.Bio,
-		"image":     user.Image,
-		"createdAt": user.CreatedAt,
-		"updatedAt": user.UpdatedAt,
-	})
+    log.Println("✅ Updated user with ID:", id)
+    return c.JSON(utils.SuccessResponse(user, "User updated successfully"))
 }
 
+// DeleteUser deletes a user by ID
 func DeleteUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	if err := database.DB.First(&user, id).Error; err != nil {
-		log.Printf("❌ User ID %s not found for delete", id)
-		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
-	}
+    id := c.Params("id")
+    var user models.User
+    if err := database.DB.First(&user, id).Error; err != nil {
+        log.Println("❌ User not found for delete with ID:", id)
+        return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+    }
 
-	if err := database.DB.Delete(&user).Error; err != nil {
-		log.Printf("❌ Failed to delete user ID %s: %v", id, err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to delete user"})
-	}
-
-	log.Printf("✅ Deleted user ID %s", id)
-	return c.SendStatus(204)
+    database.DB.Delete(&user)
+    log.Println("✅ Deleted user with ID:", id)
+    return c.JSON(utils.SuccessResponse(nil, "User deleted successfully"))
 }
