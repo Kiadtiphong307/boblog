@@ -14,3 +14,4 @@ func RegisterUserRoutes(app *fiber.App) {
     users.Put("/:id", controller.UpdateUser)
     users.Delete("/:id", controller.DeleteUser)
 }
+

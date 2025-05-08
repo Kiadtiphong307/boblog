@@ -51,11 +51,13 @@ func GetUser(c *fiber.Ctx) error {
 		"id":        user.ID,
 		"username":  user.Username,
 		"email":     user.Email,
+		"password":  user.PasswordHash,
 		"bio":       user.Bio,
 		"image":     user.Image,
 		"createdAt": user.CreatedAt,
 		"updatedAt": user.UpdatedAt,
 	})
+			
 }
 
 func CreateUser(c *fiber.Ctx) error {
@@ -75,6 +77,7 @@ func CreateUser(c *fiber.Ctx) error {
 		"id":        user.ID,
 		"username":  user.Username,
 		"email":     user.Email,
+		"password":  user.PasswordHash,
 		"bio":       user.Bio,
 		"image":     user.Image,
 		"createdAt": user.CreatedAt,
@@ -121,6 +124,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		"id":        user.ID,
 		"username":  user.Username,
 		"email":     user.Email,
+		"password":  user.PasswordHash,
 		"bio":       user.Bio,
 		"image":     user.Image,
 		"createdAt": user.CreatedAt,
