@@ -19,5 +19,7 @@ func RegisterUserRoutes(app *fiber.App) {
     users.Get("/:id", controller.GetUser)
     users.Put("/:id", controller.UpdateUser)
     users.Delete("/:id", controller.DeleteUser)
+
+    app.Get("/user", middleware.Protected(), controller.GetCurrentUser)
 }
 

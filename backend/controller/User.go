@@ -17,28 +17,67 @@ var validate = validator.New()
 
 var jwtSecret = []byte("secret") // 👉 เปลี่ยนเป็น os.Getenv("JWT_SECRET") ภายหลัง
 
-// Register
+
+func GetCurrentUser(c *fiber.Ctx) error {
+	userToken := c.Locals("user").(*jwt.Token)
+	claims := userToken.Claims.(jwt.MapClaims)
+	userID := uint(claims["id"].(float64))
+
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		log.Println("❌ User not found with ID from token:", userID)
+		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+	}
+
+	user.PasswordHash = ""
+	return c.JSON(utils.SuccessResponse(user, "Current user"))
+}
+
 func Register(c *fiber.Ctx) error {
-	var input models.User
+	// 1. รับค่าจาก JSON
+	var input struct {
+		Username string `json:"username" validate:"required,min=3"`
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=6"`
+		ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
+	}
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
 	}
 
-	// เช็ค email ซ้ำ
+	// 2. ตรวจสอบความถูกต้อง
+	if err := validate.Struct(input); err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
+	}
+
+	// 3. ตรวจ email ซ้ำ
 	var existing models.User
-	database.DB.Where("email = ?", input.Email).First(&existing)
-	if existing.ID != 0 {
+	if err := database.DB.Where("email = ?", input.Email).First(&existing).Error; err == nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Email already in use"))
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.PasswordHash), 14)
-	input.PasswordHash = string(hashedPassword)
+	// 4. เข้ารหัส password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to hash password"))
+	}
 
-	database.DB.Create(&input)
-	input.PasswordHash = ""
+	// 5. สร้าง user และบันทึก
+	user := models.User{
+		Username:     input.Username,
+		Email:        input.Email,
+		PasswordHash: string(hashedPassword),
+	}
+	if err := database.DB.Create(&user).Error; err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to create user"))
+	}
 
-	return c.Status(201).JSON(utils.SuccessResponse(input, "User registered"))
+	// 6. ลบ password ก่อนส่งกลับ
+	user.PasswordHash = ""
+
+	return c.Status(201).JSON(utils.SuccessResponse(user, "User registered successfully"))
 }
+
 
 // Login
 func Login(c *fiber.Ctx) error {
