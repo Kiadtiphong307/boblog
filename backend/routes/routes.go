@@ -17,7 +17,6 @@ func RegisterUserRoutes(app *fiber.App) {
     users := app.Group("/users").Use(middleware.Protected())
     users.Get("/", controller.GetUsers)
     users.Get("/:id", controller.GetUser)
-    users.Post("/", controller.CreateUser)
     users.Put("/:id", controller.UpdateUser)
     users.Delete("/:id", controller.DeleteUser)
 }
