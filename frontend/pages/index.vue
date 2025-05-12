@@ -6,5 +6,5 @@ import Section from '@/components/section.vue'
   <div>
     <Section />
   </div>
-  
+
 </template>

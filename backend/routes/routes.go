@@ -13,17 +13,24 @@ func RegisterAuthRoutes(app *fiber.App) {
 	auth.Post("/login", controller.Login)
 }
 
-func RegisterUserRoutes(app *fiber.App) {
-	users := app.Group("/users").Use(middleware.Protected())
+func RegisterUserRoutes(r fiber.Router) {
+	users := r.Group("/users")
 	users.Put("/:id", controller.UpdateUser)
 	users.Delete("/:id", controller.DeleteUser)
 
-	app.Get("/user", middleware.Protected(), controller.GetCurrentUser)
+	r.Get("/user", controller.GetCurrentUser)
 }
 
 func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
-	articles.Get("/", controller.GetArticles)
 	articles.Post("/", middleware.Protected(), controller.CreateArticle)
+	articles.Get("/", controller.SearchArticles)         // ใช้ใน frontend
+	articles.Get("/all", middleware.Protected(), controller.GetAllArticles) // สำหรับ admin
 	articles.Get("/:slug", controller.GetArticleBySlug)
+}
+
+
+func SearchedCategoryRoutes(app *fiber.App) {
+	category := app.Group("/categories")
+	category.Get("/", controller.GetCategories) 
 }

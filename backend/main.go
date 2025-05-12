@@ -22,9 +22,14 @@ func main() {
 	)
 
 	routes.RegisterAuthRoutes(app)
-	app.Use(middleware.Protected())
-	routes.RegisterUserRoutes(app)
-	routes.RegisterArticleRoutes(app)
+	routes.SearchedCategoryRoutes(app)    
+	routes.RegisterArticleRoutes(app)     
+	
+	// ✅ ใช้ middleware เฉพาะ route ที่ต้องการเท่านั้น
+	protected := app.Group("/", middleware.Protected())
+	routes.RegisterUserRoutes(protected)  
+	
+
 
 	app.Listen(":8080")
 

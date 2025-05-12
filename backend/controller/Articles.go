@@ -11,7 +11,7 @@ import (
 )
 
 // Get all articles
-func GetArticles(c *fiber.Ctx) error {
+func GetAllArticles(c *fiber.Ctx) error {
 	var articles []models.Article
 
 	err := database.DB.
@@ -22,12 +22,41 @@ func GetArticles(c *fiber.Ctx) error {
 		Find(&articles).Error
 
 	if err != nil {
-		log.Println("❌ Error getting articles:", err)
+		log.Println("❌ Error getting all articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to get articles"))
 	}
 
-	log.Println("✅ Retrieved all articles with relations")
-	return c.JSON(utils.SuccessResponse(articles, "Articles retrieved successfully"))
+	log.Println("✅ Retrieved all articles")
+	return c.JSON(utils.SuccessResponse(articles, "All articles retrieved"))
+}
+
+func SearchArticles(c *fiber.Ctx) error {
+	var articles []models.Article
+
+	search := c.Query("search")
+	categoryID := c.Query("category_id")
+
+	tx := database.DB.
+		Preload("Author").
+		Preload("Category").
+		Preload("Tags").
+		Preload("Comments")
+
+	if search != "" {
+		tx = tx.Where("title LIKE ?", "%"+search+"%")
+	}
+
+	if categoryID != "" {
+		tx = tx.Where("category_id = ?", categoryID)
+	}
+
+	if err := tx.Find(&articles).Error; err != nil {
+		log.Println("❌ Error filtering articles:", err)
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to filter articles"))
+	}
+
+	log.Println("✅ Retrieved filtered articles")
+	return c.JSON(utils.SuccessResponse(articles, "Filtered articles retrieved"))
 }
 
 // Get article by slug
@@ -49,7 +78,6 @@ func GetArticleBySlug(c *fiber.Ctx) error {
 
 	return c.JSON(utils.SuccessResponse(article, "Article retrieved successfully"))
 }
-
 
 // CreateArticle creates a new article
 func CreateArticle(c *fiber.Ctx) error {

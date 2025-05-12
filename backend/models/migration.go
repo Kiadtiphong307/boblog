@@ -40,9 +40,9 @@ type Comment struct {
 }
 
 type Category struct {
-	ID       uint      `gorm:"primaryKey"`
-	Name     string    `gorm:"unique;not null"`
-	Articles []Article
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Name      string    `gorm:"unique;not null" json:"name"`
+	Articles  []Article `json:"-"` 
 }
 
 type Tag struct {
