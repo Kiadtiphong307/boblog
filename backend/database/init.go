@@ -1,6 +1,7 @@
 package database
 
 import (
+    "blog-db/models"
     "fmt"
     "log"
     "os"
@@ -32,4 +33,17 @@ func Init() {
 
     DB = db
     fmt.Println("✅ Connected to database")
+
+    // AutoMigrate
+    if err := DB.AutoMigrate(
+        &models.User{},
+        &models.Article{},
+        &models.Comment{},
+        &models.Category{},
+        &models.Tag{},
+    ); err != nil {
+        log.Fatal("❌ AutoMigrate failed:", err)
+    }      
 }
+
+

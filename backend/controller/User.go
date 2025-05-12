@@ -49,13 +49,17 @@ func GetCurrentUser(c *fiber.Ctx) error {
 
 
 func Register(c *fiber.Ctx) error {
-	// 1. รับค่าจาก JSON
+	// 1. รับค่าจาก JSON พร้อมฟิลด์ใหม่
 	var input struct {
 		Username        string `json:"username" validate:"required,min=3"`
 		Email           string `json:"email" validate:"required,email"`
 		Password        string `json:"password" validate:"required,min=6"`
 		ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
+		FirstName       string `json:"first_name" validate:"required"`
+		LastName        string `json:"last_name" validate:"required"`
+		Nickname        string `json:"nickname" validate:"required"`
 	}
+
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
 	}
@@ -86,6 +90,9 @@ func Register(c *fiber.Ctx) error {
 	user := models.User{
 		Username:     input.Username,
 		Email:        input.Email,
+		FirstName:    input.FirstName,
+		LastName:     input.LastName,
+		Nickname:     input.Nickname,
 		PasswordHash: string(hashedPassword),
 	}
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -98,21 +105,28 @@ func Register(c *fiber.Ctx) error {
 	return c.Status(201).JSON(utils.SuccessResponse(user, "User registered successfully"))
 }
 
+
 // Login
 func Login(c *fiber.Ctx) error {
-	var input models.User
+	var input struct {
+		EmailOrUsername string `json:"email"` // ใช้ key เดิมเพื่อไม่ต้องแก้ frontend
+		Password        string `json:"password"`
+	}
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
 	}
 
 	var user models.User
-	database.DB.Where("email = ?", input.Email).First(&user)
+	database.DB.
+		Where("email = ? OR username = ?", input.EmailOrUsername, input.EmailOrUsername).
+		First(&user)
+
 	if user.ID == 0 {
-		return c.Status(400).JSON(utils.ErrorResponse("Invalid email or password"))
+		return c.Status(400).JSON(utils.ErrorResponse("Invalid credentials"))
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.PasswordHash)); err != nil {
-		return c.Status(400).JSON(utils.ErrorResponse("Invalid email or password"))
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Invalid credentials"))
 	}
 
 	// ✅ Create JWT
@@ -134,70 +148,43 @@ func Login(c *fiber.Ctx) error {
 }
 
 
-// UpdateUser updates an existing user by ID
+
+// แก้ไขข้อมูลผู้ใช้
 func UpdateUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	if err := database.DB.First(&user, id).Error; err != nil {
-		log.Println("❌ User not found with ID:", id)
-		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-	}
+    userID := c.Locals("userID").(uint)
+    var input struct {
+        FirstName string `json:"first_name"`
+        LastName  string `json:"last_name"`
+        Nickname  string `json:"nickname"`
+        Bio       *string `json:"bio"`
+    }
 
-	// Parse request body into a map to check which fields are provided
-	var updateData map[string]interface{}
-	if err := c.BodyParser(&updateData); err != nil {
-		log.Println("❌ Failed to parse update data:", err)
-		return c.Status(400).JSON(utils.ErrorResponse("Cannot parse JSON"))
-	}
+    if err := c.BodyParser(&input); err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+    }
 
-	// Create a temporary user for validation
-	tempUser := models.User{
-		Username: user.Username,
-		Email:    user.Email,
-	}
+    var user models.User
+    if err := database.DB.First(&user, userID).Error; err != nil {
+        return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+    }
 
-	// Update only provided fields
-	if username, ok := updateData["username"].(string); ok && username != "" {
-		tempUser.Username = username
-	}
-	if email, ok := updateData["email"].(string); ok && email != "" {
-		tempUser.Email = email
-	}
+    user.FirstName = input.FirstName
+    user.LastName = input.LastName
+    user.Nickname = input.Nickname
+    user.Bio = input.Bio
 
-	// Validate the updated data
-	if err := validate.Struct(&tempUser); err != nil {
-		log.Println("❌ Validation failed:", err)
-		return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
-	}
-
-	// Update the user with validated data
-	if username, ok := updateData["username"].(string); ok && username != "" {
-		user.Username = username
-	}
-	if email, ok := updateData["email"].(string); ok && email != "" {
-		user.Email = email
-	}
-
-	// Save the updated user
-	if err := database.DB.Save(&user).Error; err != nil {
-		log.Println("❌ Failed to update user:", err)
-		return c.Status(500).JSON(utils.ErrorResponse("Failed to update user"))
-	}
-
-	log.Println("✅ Updated user with ID:", id)
-	return c.JSON(utils.SuccessResponse(user, "User updated successfully"))
+    database.DB.Save(&user)
+    user.PasswordHash = ""
+    return c.JSON(utils.SuccessResponse(user, "Profile updated"))
 }
 
-// DeleteUser deletes a user by ID
+// ลบบัญชีผู้ใช้
 func DeleteUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	if err := database.DB.First(&user, id).Error; err != nil {
-		log.Println("❌ User not found for delete with ID:", id)
-		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-	}
+    userID := c.Locals("userID").(uint)
 
-	database.DB.Delete(&user)
-	log.Println("✅ Deleted user with ID:", id)
-	return c.JSON(utils.SuccessResponse(nil, "User deleted successfully"))
+    if err := database.DB.Delete(&models.User{}, userID).Error; err != nil {
+        return c.Status(500).JSON(utils.ErrorResponse("Failed to delete account"))
+    }
+
+    return c.JSON(utils.SuccessResponse(nil, "Account deleted successfully"))
 }

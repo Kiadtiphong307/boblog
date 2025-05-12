@@ -6,11 +6,15 @@ definePageMeta({
 import { ref } from 'vue'
 
 const form = ref({
-    username: '',
-    email: '',
-    password: '',
-    confirm_password: '',
+  username: '',
+  email: '',
+  password: '',
+  confirm_password: '',
+  first_name: '',
+  last_name: '',
+  nickname: '',
 })
+
 
 const error = ref('')
 const success = ref('')
@@ -35,6 +39,9 @@ const register = async () => {
                 email: form.value.email,
                 password: form.value.password,
                 confirm_password: form.value.confirm_password,
+                first_name: form.value.first_name,
+                last_name: form.value.last_name,
+                nickname: form.value.nickname
             }),
         })
 
@@ -44,7 +51,14 @@ const register = async () => {
             success.value = '✅ สมัครสมาชิกสำเร็จ'
             console.log('✅ สมัครสมาชิกสำเร็จ:', json)
             // ✅ ล้างฟอร์ม
-            form.value = { username: '', email: '', password: '', confirm_password: '' }
+            form.value = { 
+                username: '', 
+                email: '', 
+                password: '', 
+                confirm_password: '', 
+                first_name: '', 
+                last_name: '', 
+                nickname: '' }
         } else {
             error.value = json.error || '❌ เกิดข้อผิดพลาดในการสมัคร'
             console.warn('⚠️ สมัครไม่สำเร็จ:', json)
@@ -61,15 +75,17 @@ const register = async () => {
         <h1 class="text-xl font-bold text-center">📝 สมัครสมาชิก</h1>
 
         <form @submit.prevent="register" class="space-y-4">
-            <input v-model="form.username" type="text" placeholder="Username" class="input input-bordered w-full"
-                required />
+            <input v-model="form.username" type="text" placeholder="Username" class="input input-bordered w-full" required />
             <input v-model="form.email" type="email" placeholder="Email" class="input input-bordered w-full" required />
-            <input v-model="form.password" type="password" placeholder="Password" class="input input-bordered w-full"
-                required />
+            <input v-model="form.first_name" type="text" placeholder="First Name" class="input input-bordered w-full" required />
+            <input v-model="form.last_name" type="text" placeholder="Last Name" class="input input-bordered w-full" required />
+            <input v-model="form.nickname" type="text" placeholder="Nickname" class="input input-bordered w-full" required />
+            <input v-model="form.password" type="password" placeholder="Password" class="input input-bordered w-full" required />
             <input v-model="form.confirm_password" type="password" placeholder="Confirm Password"
-                class="input input-bordered w-full" required />
+              class="input input-bordered w-full" required />
             <button type="submit" class="btn btn-primary w-full">สมัครสมาชิก</button>
-        </form>
+          </form>
+          
 
         <p v-if="success" class="text-green-600 text-center">{{ success }}</p>
         <p v-if="error" class="text-red-600 text-center">{{ error }}</p>

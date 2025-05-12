@@ -6,7 +6,7 @@ definePageMeta({
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-const email = ref('')
+const emailOrUsername = ref('')
 const password = ref('')
 const error = ref('')
 const router = useRouter()
@@ -18,7 +18,9 @@ const login = async () => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value }),
+      body: JSON.stringify({ 
+        email: emailOrUsername.value, 
+        password: password.value }),
     })
 
     const json = await res.json()
@@ -42,9 +44,9 @@ const login = async () => {
 
       <form @submit.prevent="login" class="space-y-4">
         <input
-          v-model="email"
-          type="email"
-          placeholder="Email"
+          v-model="emailOrUsername"
+          type="text"
+          placeholder="Email or Username"
           required
           class="input input-bordered w-full"
         />

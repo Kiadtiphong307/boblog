@@ -14,23 +14,28 @@ func RegisterAuthRoutes(app *fiber.App) {
 }
 
 func RegisterUserRoutes(r fiber.Router) {
+	// ✅ Group: /users ต้องใช้ token ผ่าน middleware
 	users := r.Group("/users")
-	users.Put("/:id", controller.UpdateUser)
-	users.Delete("/:id", controller.DeleteUser)
+	users.Put("/:id", middleware.Protected(), controller.UpdateUser)
+	users.Delete("/:id", middleware.Protected(), controller.DeleteUser)
 
-	r.Get("/user", controller.GetCurrentUser)
+	// ✅ ใช้ดึงข้อมูล user จาก JWT (เช่นหน้าโปรไฟล์)
+	r.Get("/user", middleware.Protected(), controller.GetCurrentUser)
 }
 
 func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
-	articles.Post("/", middleware.Protected(), controller.CreateArticle)
-	articles.Get("/", controller.SearchArticles)         // ใช้ใน frontend
-	articles.Get("/all", middleware.Protected(), controller.GetAllArticles) // สำหรับ admin
-	articles.Get("/:slug", controller.GetArticleBySlug)
-}
 
+	// ✅ ลำดับสำคัญ: route ที่เฉพาะเจาะจงต้องมาก่อน route dynamic
+	articles.Get("/my-articles", middleware.Protected(), controller.GetMyArticles) // ดูบทความที่ตัวเองเขียน
+	articles.Get("/", controller.SearchArticles)                                   // ดูทั้งหมด
+	articles.Get("/:slug", controller.GetArticleBySlug)                            // ดูบทความตาม slug
+
+	articles.Post("/", middleware.Protected(), controller.CreateArticle)
+
+}
 
 func SearchedCategoryRoutes(app *fiber.App) {
 	category := app.Group("/categories")
-	category.Get("/", controller.GetCategories) 
+	category.Get("/", controller.GetCategories)
 }
