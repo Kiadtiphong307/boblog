@@ -17,28 +17,43 @@ var validate = validator.New()
 
 var jwtSecret = []byte("secret") // 👉 เปลี่ยนเป็น os.Getenv("JWT_SECRET") ภายหลัง
 
-
+// GetCurrentUser
 func GetCurrentUser(c *fiber.Ctx) error {
-	userToken := c.Locals("user").(*jwt.Token)
-	claims := userToken.Claims.(jwt.MapClaims)
+	// ตรวจสอบว่า token ถูกส่งมาหรือไม่
+	userToken := c.Locals("user")
+	if userToken == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Unauthorized"))
+	}
+
+	// แปลงเป็น jwt.Token อย่างปลอดภัย
+	token, ok := userToken.(*jwt.Token)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Invalid token"))
+	}
+
+	// แปลง claims และดึง ID
+	claims := token.Claims.(jwt.MapClaims)
 	userID := uint(claims["id"].(float64))
 
+	// ดึง user จาก database
 	var user models.User
 	if err := database.DB.First(&user, userID).Error; err != nil {
 		log.Println("❌ User not found with ID from token:", userID)
 		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
 	}
 
+	// ลบ password ออกก่อนตอบกลับ
 	user.PasswordHash = ""
 	return c.JSON(utils.SuccessResponse(user, "Current user"))
 }
 
+
 func Register(c *fiber.Ctx) error {
 	// 1. รับค่าจาก JSON
 	var input struct {
-		Username string `json:"username" validate:"required,min=3"`
-		Email    string `json:"email" validate:"required,email"`
-		Password string `json:"password" validate:"required,min=6"`
+		Username        string `json:"username" validate:"required,min=3"`
+		Email           string `json:"email" validate:"required,email"`
+		Password        string `json:"password" validate:"required,min=6"`
 		ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
 	}
 	if err := c.BodyParser(&input); err != nil {
@@ -48,6 +63,11 @@ func Register(c *fiber.Ctx) error {
 	// 2. ตรวจสอบความถูกต้อง
 	if err := validate.Struct(input); err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
+	}
+
+	// 2.5 ตรวจว่ารหัสผ่านตรงกันหรือไม่
+	if input.Password != input.ConfirmPassword {
+		return c.Status(400).JSON(utils.ErrorResponse("Passwords do not match"))
 	}
 
 	// 3. ตรวจ email ซ้ำ
@@ -77,7 +97,6 @@ func Register(c *fiber.Ctx) error {
 
 	return c.Status(201).JSON(utils.SuccessResponse(user, "User registered successfully"))
 }
-
 
 // Login
 func Login(c *fiber.Ctx) error {
@@ -114,29 +133,6 @@ func Login(c *fiber.Ctx) error {
 	}, "Login successful"))
 }
 
-// GetUsers retrieves all users from the database
-func GetUsers(c *fiber.Ctx) error {
-	var users []models.User
-	if result := database.DB.Find(&users); result.Error != nil {
-		log.Println("❌ Error getting users:", result.Error)
-		return c.Status(500).JSON(utils.ErrorResponse("Failed to get users"))
-	}
-	log.Println("✅ Retrieved all users")
-	return c.JSON(utils.SuccessResponse(users, "Users retrieved successfully"))
-}
-
-// GetUser retrieves a user by ID
-func GetUser(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var user models.User
-	result := database.DB.First(&user, id)
-	if result.Error != nil {
-		log.Println("❌ User not found with ID:", id)
-		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-	}
-	log.Println("✅ Retrieved user with ID:", id)
-	return c.JSON(utils.SuccessResponse(user, "User retrieved successfully"))
-}
 
 // UpdateUser updates an existing user by ID
 func UpdateUser(c *fiber.Ctx) error {

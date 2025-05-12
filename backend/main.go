@@ -1,30 +1,30 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"blog-db/database"
+	"blog-db/middleware"
 	"blog-db/models"
 	"blog-db/routes"
-	"blog-db/middleware"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
 	app := fiber.New()
 
 	database.Init()
-	database.DB.AutoMigrate(&models.User{})
-	database.DB.AutoMigrate(&models.Article{})
-	database.DB.AutoMigrate(&models.Comment{})
-	database.DB.AutoMigrate(&models.Category{})
-	database.DB.AutoMigrate(&models.Tag{})
-
-    app.Get("/", func(c *fiber.Ctx) error {
-        return c.SendString("Welcome to Go + Fiber + MySQL")
-    })
+	database.DB.AutoMigrate(
+		&models.User{},
+		&models.Article{},
+		&models.Comment{},
+		&models.Category{},
+		&models.Tag{},
+	)
 
 	routes.RegisterAuthRoutes(app)
 	app.Use(middleware.Protected())
 	routes.RegisterUserRoutes(app)
+	routes.RegisterArticleRoutes(app)
 
 	app.Listen(":8080")
 

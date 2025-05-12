@@ -14,16 +14,16 @@ type User struct {
 }
 
 type Article struct {
-	ID         uint      `gorm:"primaryKey"`
-	Title      string    `gorm:"not null"`
-	Slug       string    `gorm:"unique;not null"`
-	Content    string    `gorm:"type:text;not null"`
-	AuthorID   uint      `gorm:"not null"`
-	Author     User      `gorm:"foreignKey:AuthorID"`
-	CategoryID uint      `gorm:"not null"`
-	Category   Category  `gorm:"foreignKey:CategoryID"`
-	Comments   []Comment `gorm:"foreignKey:ArticleID"`
-	Tags       []Tag     `gorm:"many2many:article_tags"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	Title      string    `gorm:"not null" json:"title"`
+	Slug       string    `gorm:"unique;not null" json:"slug"`
+	Content    string    `gorm:"type:text;not null" json:"content"`
+	AuthorID   uint      `gorm:"not null" json:"-"`
+	Author     User      `gorm:"foreignKey:AuthorID" json:"author"`
+	CategoryID uint      `gorm:"not null" json:"-"`
+	Category   Category  `gorm:"foreignKey:CategoryID" json:"category"`
+	Comments   []Comment `gorm:"foreignKey:ArticleID" json:"comments"`
+	Tags       []Tag     `gorm:"many2many:article_tags" json:"tags"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

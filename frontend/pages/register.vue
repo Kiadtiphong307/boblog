@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: false
+})
+
 import { ref } from 'vue'
 
 const form = ref({
@@ -30,6 +34,7 @@ const register = async () => {
                 username: form.value.username,
                 email: form.value.email,
                 password: form.value.password,
+                confirm_password: form.value.confirm_password,
             }),
         })
 
