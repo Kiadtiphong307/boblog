@@ -188,3 +188,5 @@ func DeleteUser(c *fiber.Ctx) error {
 
     return c.JSON(utils.SuccessResponse(nil, "Account deleted successfully"))
 }
+
+

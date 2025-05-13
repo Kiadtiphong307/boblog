@@ -26,7 +26,6 @@ func RegisterUserRoutes(r fiber.Router) {
 func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
 
-	// ✅ ลำดับสำคัญ: route ที่เฉพาะเจาะจงต้องมาก่อน route dynamic
 	articles.Get("/my-articles", middleware.Protected(), controller.GetMyArticles) // ดูบทความที่ตัวเองเขียน
 	articles.Get("/", controller.SearchArticles)                                   // ดูทั้งหมด
 	articles.Get("/:slug", controller.GetArticleBySlug)                            // ดูบทความตาม slug
