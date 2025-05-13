@@ -49,13 +49,13 @@ onMounted(() => {
         </NuxtLink>
         <NuxtLink
           to="/articles/create"
-          class="flex items-center text-lg text-black hover:underline"
+          class="flex items-center text-lg text-black "
         >
           ✏️ เขียนบทความ
         </NuxtLink>
         <NuxtLink
           to="/articles"
-          class="flex items-center text-lg text-black hover:underline"
+          class="flex items-center text-lg text-black"
         >
           🔍 ค้นหา
         </NuxtLink>

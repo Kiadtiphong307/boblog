@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const articles = ref([])
 const loading = ref(false)
 const error = ref(null)
+const router = useRouter()
 
 const fetchMyArticles = async () => {
   loading.value = true
@@ -25,6 +27,28 @@ const fetchMyArticles = async () => {
   }
 }
 
+const deleteArticle = async (slug) => {
+  const confirmed = confirm('คุณแน่ใจหรือไม่ว่าต้องการลบบทความนี้?')
+  if (!confirmed) return
+
+  try {
+    const token = localStorage.getItem('token')
+    await $fetch(`/api/articles/${slug}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    // ลบจากรายการที่แสดง
+    articles.value = articles.value.filter((a) => a.slug !== slug)
+    alert('✅ ลบบทความเรียบร้อยแล้ว')
+  } catch (err) {
+    console.error(err)
+    alert('❌ ลบบทความไม่สำเร็จ')
+  }
+}
+
 onMounted(() => {
   fetchMyArticles()
 })
@@ -43,12 +67,36 @@ onMounted(() => {
       <div
         v-for="article in articles"
         :key="article.id"
-        class="p-4 border rounded shadow-sm hover:shadow-md transition"
+        class="p-4 border rounded shadow hover:shadow-md transition"
       >
         <h2 class="text-xl font-semibold">{{ article.title }}</h2>
         <p class="text-gray-600 mt-2 line-clamp-3">{{ article.description }}</p>
         <p class="text-sm text-gray-400 mt-4">🗓 {{ new Date(article.created_at).toLocaleDateString() }}</p>
+
+        <div class="mt-4 flex gap-2">
+          <NuxtLink
+            :to="`/articles/edit/${article.slug}`"
+            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            ✏️ แก้ไข
+          </NuxtLink>
+          <button
+            @click="deleteArticle(article.slug)"
+            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            🗑 ลบ
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

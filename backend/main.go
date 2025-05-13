@@ -25,6 +25,8 @@ func main() {
 	routes.RegisterAuthRoutes(app) // สำหรับการสมัครสมาชิก และเข้าสู่ระบบ
 	routes.SearchedCategoryRoutes(app) // สำหรับการค้นหาหมวดหมู่
 	routes.RegisterArticleRoutes(app) // สำหรับการสร้าง แก้ไข และลบบทความ
+	routes.	GetTagsAll(app) // สำหรับการดึงข้อมูลแท็ก
+
 	
 	protected := app.Group("/", middleware.Protected())
 	routes.RegisterUserRoutes(protected) // สำหรับการแก้ไข และลบข้อมูลผู้ใช้
@@ -32,9 +34,6 @@ func main() {
 	// จำลองข้อมูล สำหรับทดสอบ
 	seed.SeedCategories()
 	seed.SeedUserAndArticles()
-
-
-
 
 	app.Listen(":8080")
 

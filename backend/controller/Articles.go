@@ -80,7 +80,23 @@ func GetArticleBySlug(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(article, "Article retrieved successfully"))
 }
 
+// Get my articles
+func GetMyArticles(c *fiber.Ctx) error {
+    user := c.Locals("user").(*jwt.Token)
+    claims := user.Claims.(jwt.MapClaims)
+    userID := claims["id"].(float64)
 
+    var articles []models.Article
+    if err := database.DB.Where("author_id = ?", uint(userID)).Find(&articles).Error; err != nil {
+        return c.Status(500).JSON(fiber.Map{
+            "error": "ไม่สามารถดึงบทความได้",
+        })
+    }
+
+    return c.JSON(fiber.Map{
+        "data": articles,
+    })
+}
 
 // CreateArticle creates a new article
 func CreateArticle(c *fiber.Ctx) error {
@@ -143,23 +159,95 @@ func CreateArticle(c *fiber.Ctx) error {
 	return c.Status(201).JSON(utils.SuccessResponse(article, "Article created successfully"))
 }
 
-// controller/article_controller.go
-func GetMyArticles(c *fiber.Ctx) error {
+
+// UpdateArticle updates an existing article
+func UpdateArticle(c *fiber.Ctx) error {
+    slug := c.Params("slug")
     user := c.Locals("user").(*jwt.Token)
     claims := user.Claims.(jwt.MapClaims)
-    userID := claims["id"].(float64)
+    userID := uint(claims["id"].(float64))
 
-    var articles []models.Article
-    if err := database.DB.Where("author_id = ?", uint(userID)).Find(&articles).Error; err != nil {
-        return c.Status(500).JSON(fiber.Map{
-            "error": "ไม่สามารถดึงบทความได้",
-        })
+    // ค้นหาบทความจาก slug
+    var article models.Article
+    if err := database.DB.Preload("Tags").First(&article, "slug = ?", slug).Error; err != nil {
+        return c.Status(404).JSON(utils.ErrorResponse("ไม่พบบทความ"))
     }
 
-    return c.JSON(fiber.Map{
-        "data": articles,
-    })
+    // ตรวจสอบสิทธิ์ผู้ใช้
+    if article.AuthorID != userID {
+        return c.Status(403).JSON(utils.ErrorResponse("คุณไม่มีสิทธิ์แก้ไขบทความนี้"))
+    }
+
+    // รับ input จาก client
+    var input struct {
+        Title      string `json:"title"`
+        Content    string `json:"content"`
+        CategoryID uint   `json:"category_id"`
+        TagIDs     []uint `json:"tag_ids"`
+    }
+
+    if err := c.BodyParser(&input); err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("ข้อมูลไม่ถูกต้อง"))
+    }
+
+    // ตรวจสอบ category ที่เลือกมีอยู่จริง
+    var category models.Category
+    if err := database.DB.First(&category, input.CategoryID).Error; err != nil {
+        return c.Status(400).JSON(utils.ErrorResponse("หมวดหมู่ไม่ถูกต้อง"))
+    }
+
+    // ดึง tag ที่เลือกทั้งหมด
+    var tags []models.Tag
+    if len(input.TagIDs) > 0 {
+        if err := database.DB.Where("id IN ?", input.TagIDs).Find(&tags).Error; err != nil {
+            return c.Status(400).JSON(utils.ErrorResponse("ไม่สามารถโหลดแท็กได้"))
+        }
+    }
+
+    // อัปเดตบทความ
+    article.Title = input.Title
+    article.Content = input.Content
+    article.CategoryID = input.CategoryID
+
+    // อัปเดต Many2Many relation (แท็ก)
+    if err := database.DB.Model(&article).Association("Tags").Replace(&tags); err != nil {
+        return c.Status(500).JSON(utils.ErrorResponse("อัปเดตแท็กล้มเหลว"))
+    }
+
+    if err := database.DB.Save(&article).Error; err != nil {
+        return c.Status(500).JSON(utils.ErrorResponse("บันทึกบทความล้มเหลว"))
+    }
+
+    return c.JSON(utils.SuccessResponse(article, "แก้ไขบทความเรียบร้อยแล้ว"))
 }
 
 
+// DeleteArticle deletes an article by slug (only by the author)
+func DeleteArticle(c *fiber.Ctx) error {
+	slug := c.Params("slug")
+
+	// รับข้อมูล user จาก JWT
+	user := c.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userID := uint(claims["id"].(float64))
+
+	// หาบทความตาม slug
+	var article models.Article
+	if err := database.DB.First(&article, "slug = ?", slug).Error; err != nil {
+		return c.Status(404).JSON(utils.ErrorResponse("ไม่พบบทความ"))
+	}
+
+	// ตรวจสอบสิทธิ์
+	if article.AuthorID != userID {
+		return c.Status(403).JSON(utils.ErrorResponse("คุณไม่มีสิทธิ์ลบบทความนี้"))
+	}
+
+	// ลบบทความโดยไม่ยุ่งกับ tags
+	if err := database.DB.Delete(&article).Error; err != nil {
+		log.Println("🔥 ลบไม่สำเร็จ:", err)
+		return c.Status(500).JSON(utils.ErrorResponse("ลบบทความไม่สำเร็จ"))
+	}
+
+	return c.JSON(utils.SuccessResponse(nil, "ลบบทความเรียบร้อยแล้ว"))
+}
 

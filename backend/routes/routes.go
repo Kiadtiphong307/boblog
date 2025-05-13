@@ -30,7 +30,9 @@ func RegisterArticleRoutes(app *fiber.App) {
 	articles.Get("/", controller.SearchArticles)                                   // ดูทั้งหมด
 	articles.Get("/:slug", controller.GetArticleBySlug)                            // ดูบทความตาม slug
 
-	articles.Post("/", middleware.Protected(), controller.CreateArticle)
+	articles.Post("/", middleware.Protected(), controller.CreateArticle) // สร้างบทความ
+	articles.Put("/:slug", middleware.Protected(), controller.UpdateArticle) // แก้ไขบทความ
+	articles.Delete("/:slug", middleware.Protected(), controller.DeleteArticle) // ลบบทความ
 
 }
 
@@ -38,3 +40,9 @@ func SearchedCategoryRoutes(app *fiber.App) {
 	category := app.Group("/categories")
 	category.Get("/", controller.GetCategories)
 }
+
+func GetTagsAll(app *fiber.App) {
+	api := app.Group("/tags")
+	api.Get("/", controller.GetTags)
+}
+
