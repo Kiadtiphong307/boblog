@@ -22,7 +22,7 @@ type Article struct {
 	Slug       string    `gorm:"unique;not null" json:"slug"`
 	Content    string    `gorm:"type:text;not null" json:"content"`
 	AuthorID   uint      `gorm:"not null" json:"-"`
-	Author     User      `gorm:"foreignKey:AuthorID" json:"author"`
+	Author     User      `gorm:"foreignKey:AuthorID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"author"`
 	CategoryID uint      `gorm:"not null" json:"-"`
 	Category   Category  `gorm:"foreignKey:CategoryID" json:"category"`
 	Tags       []Tags     `gorm:"many2many:article_tags;" json:"tags"` 
@@ -37,10 +37,11 @@ type Comment struct {
 	Content   string    `gorm:"type:text;not null" json:"content"`
 	ArticleID uint      `gorm:"not null" json:"-"`
 	UserID    uint      `gorm:"not null" json:"-"`
-	User      User      `gorm:"foreignKey:UserID" json:"user"`
-	Article   Article   `gorm:"foreignKey:ArticleID" json:"-"`
+	User      User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
+	Article   Article   `gorm:"foreignKey:ArticleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
 
 type Category struct {
 	ID       uint      `gorm:"primaryKey" json:"id"`

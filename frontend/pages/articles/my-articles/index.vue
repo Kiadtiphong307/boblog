@@ -33,6 +33,11 @@ const deleteArticle = async (slug) => {
 
   try {
     const token = localStorage.getItem('token')
+    if (!token) {
+      alert('❌ ไม่พบ token โปรดเข้าสู่ระบบอีกครั้ง')
+      return
+    }
+
     await $fetch(`/api/articles/${slug}`, {
       method: 'DELETE',
       headers: {
@@ -40,14 +45,16 @@ const deleteArticle = async (slug) => {
       },
     })
 
-    // ลบจากรายการที่แสดง
+    // ลบออกจาก array บน frontend
     articles.value = articles.value.filter((a) => a.slug !== slug)
     alert('✅ ลบบทความเรียบร้อยแล้ว')
   } catch (err) {
-    console.error(err)
-    alert('❌ ลบบทความไม่สำเร็จ')
+    console.error('❌ ลบบทความไม่สำเร็จ:', err)
+    const message = err?.data?.message || 'ลบบทความไม่สำเร็จ กรุณาลองใหม่'
+    alert(`❌ ${message}`)
   }
 }
+
 
 onMounted(() => {
   fetchMyArticles()

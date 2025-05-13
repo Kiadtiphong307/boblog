@@ -15,39 +15,9 @@ import (
 
 var validate = validator.New()
 
-var jwtSecret = []byte("secret") // 👉 เปลี่ยนเป็น os.Getenv("JWT_SECRET") ภายหลัง
+var jwtSecret = []byte("secret") 
 
-// GetCurrentUser
-func GetCurrentUser(c *fiber.Ctx) error {
-	// ตรวจสอบว่า token ถูกส่งมาหรือไม่
-	userToken := c.Locals("user")
-	if userToken == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Unauthorized"))
-	}
-
-	// แปลงเป็น jwt.Token อย่างปลอดภัย
-	token, ok := userToken.(*jwt.Token)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Invalid token"))
-	}
-
-	// แปลง claims และดึง ID
-	claims := token.Claims.(jwt.MapClaims)
-	userID := uint(claims["id"].(float64))
-
-	// ดึง user จาก database
-	var user models.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
-		log.Println("❌ User not found with ID from token:", userID)
-		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-	}
-
-	// ลบ password ออกก่อนตอบกลับ
-	user.PasswordHash = ""
-	return c.JSON(utils.SuccessResponse(user, "Current user"))
-}
-
-
+// สมัครสมาชิก
 func Register(c *fiber.Ctx) error {
 	// 1. รับค่าจาก JSON พร้อมฟิลด์ใหม่
 	var input struct {
@@ -105,8 +75,7 @@ func Register(c *fiber.Ctx) error {
 	return c.Status(201).JSON(utils.SuccessResponse(user, "User registered successfully"))
 }
 
-
-// Login
+// เข้าสู่ระบบ
 func Login(c *fiber.Ctx) error {
 	var input struct {
 		EmailOrUsername string `json:"email"` // ใช้ key เดิมเพื่อไม่ต้องแก้ frontend
@@ -147,46 +116,96 @@ func Login(c *fiber.Ctx) error {
 	}, "Login successful"))
 }
 
+// ข้อมูลผู้ใช้งานปัจจุบัน
+func GetCurrentUser(c *fiber.Ctx) error {
+	// ตรวจสอบว่า token ถูกส่งมาหรือไม่
+	userToken := c.Locals("user")
+	if userToken == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Unauthorized"))
+	}
 
+	// แปลงเป็น jwt.Token อย่างปลอดภัย
+	token, ok := userToken.(*jwt.Token)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Invalid token"))
+	}
+
+	// แปลง claims และดึง ID
+	claims := token.Claims.(jwt.MapClaims)
+	userID := uint(claims["id"].(float64))
+
+	// ดึง user จาก database
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		log.Println("❌ User not found with ID from token:", userID)
+		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+	}
+
+	// ลบ password ออกก่อนตอบกลับ
+	user.PasswordHash = ""
+	return c.JSON(utils.SuccessResponse(user, "Current user"))
+}
 
 // แก้ไขข้อมูลผู้ใช้
-func UpdateUser(c *fiber.Ctx) error {
-    userID := c.Locals("userID").(uint)
-    var input struct {
-        FirstName string `json:"first_name"`
-        LastName  string `json:"last_name"`
-        Nickname  string `json:"nickname"`
-        Bio       *string `json:"bio"`
-    }
+func UpdateCurrentUser(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(uint)
 
-    if err := c.BodyParser(&input); err != nil {
-        return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
-    }
+	var input struct {
+		FirstName string  `json:"first_name"`
+		LastName  string  `json:"last_name"`
+		Nickname  string  `json:"nickname"`
+		Bio       *string `json:"bio"`
+	}
 
-    var user models.User
-    if err := database.DB.First(&user, userID).Error; err != nil {
-        return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-    }
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+	}
 
-    user.FirstName = input.FirstName
-    user.LastName = input.LastName
-    user.Nickname = input.Nickname
-    user.Bio = input.Bio
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+	}
 
-    database.DB.Save(&user)
-    user.PasswordHash = ""
-    return c.JSON(utils.SuccessResponse(user, "Profile updated"))
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.Nickname = input.Nickname
+	user.Bio = input.Bio
+
+	if err := database.DB.Save(&user).Error; err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to update user"))
+	}
+
+	user.PasswordHash = ""
+	return c.JSON(utils.SuccessResponse(user, "Profile updated"))
 }
 
 // ลบบัญชีผู้ใช้
-func DeleteUser(c *fiber.Ctx) error {
-    userID := c.Locals("userID").(uint)
+func DeleteCurrentUser(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(uint)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Unauthorized"))
+	}
 
-    if err := database.DB.Delete(&models.User{}, userID).Error; err != nil {
-        return c.Status(500).JSON(utils.ErrorResponse("Failed to delete account"))
-    }
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
+	}
 
-    return c.JSON(utils.SuccessResponse(nil, "Account deleted successfully"))
+	// 🔁 ลบข้อมูลลูกที่เกี่ยวข้อง
+	if err := database.DB.Where("user_id = ?", userID).Delete(&models.Article{}).Error; err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to delete articles"))
+	}
+
+	// อาจต้องลบ comment หรือข้อมูลอื่นเพิ่มถ้ามี
+
+	// 🔚 ลบผู้ใช้
+	if err := database.DB.Delete(&user).Error; err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to delete user"))
+	}
+
+	return c.JSON(utils.SuccessResponse(nil, "บัญชีถูกลบเรียบร้อยแล้ว"))
 }
+
+
 
 

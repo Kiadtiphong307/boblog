@@ -29,7 +29,7 @@ func main() {
 
 	
 	protected := app.Group("/", middleware.Protected())
-	routes.RegisterUserRoutes(protected) // สำหรับการแก้ไข และลบข้อมูลผู้ใช้
+	routes.RegisterUserRoutes(protected) 
 	
 	// จำลองข้อมูล สำหรับทดสอบ
 	seed.SeedCategories()

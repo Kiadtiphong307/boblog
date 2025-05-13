@@ -231,27 +231,36 @@ func UpdateArticle(c *fiber.Ctx) error {
 func DeleteArticle(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 
-	// รับข้อมูล user จาก JWT
+	// ดึงข้อมูล user จาก JWT
 	user := c.Locals("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	userID := uint(claims["id"].(float64))
 
-	// หาบทความตาม slug
+	// ค้นหาบทความจาก slug พร้อม preload แท็ก
 	var article models.Article
-	if err := database.DB.First(&article, "slug = ?", slug).Error; err != nil {
+	if err := database.DB.Preload("Tags").First(&article, "slug = ?", slug).Error; err != nil {
 		return c.Status(404).JSON(utils.ErrorResponse("ไม่พบบทความ"))
 	}
 
-	// ตรวจสอบสิทธิ์
+	// ตรวจสอบสิทธิ์เจ้าของบทความ
 	if article.AuthorID != userID {
 		return c.Status(403).JSON(utils.ErrorResponse("คุณไม่มีสิทธิ์ลบบทความนี้"))
 	}
 
-	// ลบบทความโดยไม่ยุ่งกับ tags
+	// 🔁 ลบความสัมพันธ์กับแท็กในตารางกลาง
+	if err := database.DB.Model(&article).Association("Tags").Clear(); err != nil {
+		log.Println("❌ ลบความสัมพันธ์กับ Tags ไม่สำเร็จ:", err)
+		return c.Status(500).JSON(utils.ErrorResponse("ลบแท็กของบทความไม่สำเร็จ"))
+	}
+
+	// ❌ หมายเหตุ: ถ้ามี comment หรือ relations อื่น ต้องพิจารณาลบ cascade
+
+	// ✅ ลบบทความ
 	if err := database.DB.Delete(&article).Error; err != nil {
-		log.Println("🔥 ลบไม่สำเร็จ:", err)
+		log.Println("🔥 ลบบทความไม่สำเร็จ:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("ลบบทความไม่สำเร็จ"))
 	}
 
 	return c.JSON(utils.SuccessResponse(nil, "ลบบทความเรียบร้อยแล้ว"))
 }
+

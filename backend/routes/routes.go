@@ -7,22 +7,23 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// สมัครสมาชิก และเข้าสู่ระบบ
 func RegisterAuthRoutes(app *fiber.App) {
 	auth := app.Group("/auth")
 	auth.Post("/register", controller.Register)
 	auth.Post("/login", controller.Login)
 }
 
+// ข้อมูลผู้ใช้งานปัจจุบัน
 func RegisterUserRoutes(r fiber.Router) {
-	// ✅ Group: /users ต้องใช้ token ผ่าน middleware
-	users := r.Group("/users")
-	users.Put("/:id", middleware.Protected(), controller.UpdateUser)
-	users.Delete("/:id", middleware.Protected(), controller.DeleteUser)
+	users := r.Group("/user", middleware.Protected())
 
-	// ✅ ใช้ดึงข้อมูล user จาก JWT (เช่นหน้าโปรไฟล์)
-	r.Get("/user", middleware.Protected(), controller.GetCurrentUser)
+	users.Get("/", controller.GetCurrentUser) // ดูข้อมูลผู้ใช้งานปัจจุบัน
+	users.Put("/", controller.UpdateCurrentUser) // แก้ไขข้อมูลผู้ใช้งานปัจจุบัน
+	users.Delete("/", controller.DeleteCurrentUser) // ลบผู้ใช้งานปัจจุบัน
 }
 
+// บทความ
 func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
 
@@ -36,11 +37,13 @@ func RegisterArticleRoutes(app *fiber.App) {
 
 }
 
+// ค้นหาหมวดหมู่
 func SearchedCategoryRoutes(app *fiber.App) {
 	category := app.Group("/categories")
 	category.Get("/", controller.GetCategories)
 }
 
+// ดึงข้อมูลแท็ก
 func GetTagsAll(app *fiber.App) {
 	api := app.Group("/tags")
 	api.Get("/", controller.GetTags)
