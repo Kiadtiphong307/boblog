@@ -60,8 +60,8 @@ const fetchOptions = async () => {
 
     console.log("✅ TAG RESPONSE:", resTags);
     tags.value = (resTags.data || []).map((tag) => ({
-      id: tag.ID,
-      name: tag.Name,
+      id: tag.id,
+      name: tag.name,
     }));
 
     console.log("📦 TAGS IN COMPONENT:", tags.value);

@@ -10,7 +10,7 @@ import (
 
 // ✅ ดึงรายชื่อหมวดหมู่ทั้งหมด
 func GetTags(c *fiber.Ctx) error {
-	var tags []models.Tag
+	var tags []models.Tags
 
 	if result := database.DB.Find(&tags); result.Error != nil {
 		log.Println("❌ Error loading tags:", result.Error)

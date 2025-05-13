@@ -40,7 +40,7 @@ func Init() {
         &models.Article{},
         &models.Comment{},
         &models.Category{},
-        &models.Tag{},
+        &models.Tags{},
     ); err != nil {
         log.Fatal("❌ AutoMigrate failed:", err)
     }      

@@ -88,11 +88,11 @@ watch([searchTerm, selectedCategory], fetchArticles);
           👤 {{ article.author?.username || "Unknown" }} | 📂
           {{ article.category?.name || "Uncategorized" }} | 🏷️
           <span
-            v-for="tag in article.tags"
-            :key="tag.id"
+            v-for="tags in article.tags"
+            :key="tags.id"
             class="bg-gray-200 rounded px-2 py-0.5 text-xs mr-1"
           >
-            #{{ tag.name }}
+            #{{ tags.name }}
           </span>
         </div>
 

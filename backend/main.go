@@ -19,7 +19,7 @@ func main() {
 		&models.Article{},
 		&models.Comment{},
 		&models.Category{},
-		&models.Tag{},
+		&models.Tags{},
 	)
 
 	routes.RegisterAuthRoutes(app) // สำหรับการสมัครสมาชิก และเข้าสู่ระบบ
@@ -33,6 +33,7 @@ func main() {
 	
 	// จำลองข้อมูล สำหรับทดสอบ
 	seed.SeedCategories()
+	seed.SeedTags()  
 	seed.SeedUserAndArticles()
 
 	app.Listen(":8080")
