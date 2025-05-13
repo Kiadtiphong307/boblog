@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -180,31 +181,8 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 }
 
 // ลบบัญชีผู้ใช้
-func DeleteCurrentUser(c *fiber.Ctx) error {
-	userID, ok := c.Locals("userID").(uint)
-	if !ok {
-		return c.Status(fiber.StatusUnauthorized).JSON(utils.ErrorResponse("Unauthorized"))
-	}
 
-	var user models.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
-		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
-	}
-
-	// 🔁 ลบข้อมูลลูกที่เกี่ยวข้อง
-	if err := database.DB.Where("user_id = ?", userID).Delete(&models.Article{}).Error; err != nil {
-		return c.Status(500).JSON(utils.ErrorResponse("Failed to delete articles"))
-	}
-
-	// อาจต้องลบ comment หรือข้อมูลอื่นเพิ่มถ้ามี
-
-	// 🔚 ลบผู้ใช้
-	if err := database.DB.Delete(&user).Error; err != nil {
-		return c.Status(500).JSON(utils.ErrorResponse("Failed to delete user"))
-	}
-
-	return c.JSON(utils.SuccessResponse(nil, "บัญชีถูกลบเรียบร้อยแล้ว"))
-}
+	
 
 
 

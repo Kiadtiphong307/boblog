@@ -20,7 +20,7 @@ func RegisterUserRoutes(r fiber.Router) {
 
 	users.Get("/", controller.GetCurrentUser) // ดูข้อมูลผู้ใช้งานปัจจุบัน
 	users.Put("/", controller.UpdateCurrentUser) // แก้ไขข้อมูลผู้ใช้งานปัจจุบัน
-	users.Delete("/", controller.DeleteCurrentUser) // ลบผู้ใช้งานปัจจุบัน
+
 }
 
 // บทความ
