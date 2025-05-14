@@ -19,3 +19,4 @@ func GetTags(c *fiber.Ctx) error {
 
 	return c.JSON(utils.SuccessResponse(tags, "Tags retrieved"))
 }
+

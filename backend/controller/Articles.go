@@ -8,8 +8,10 @@ import (
 	"net/url"
 	"strings"
 
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // Get all articles
@@ -189,6 +191,8 @@ func CreateArticle(c *fiber.Ctx) error {
 // UpdateArticle updates an existing article
 func UpdateArticle(c *fiber.Ctx) error {
 	slug := c.Params("slug")
+
+	// ✅ อ่านข้อมูลผู้ใช้จาก JWT
 	user := c.Locals("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	userID := uint(claims["id"].(float64))
@@ -199,17 +203,18 @@ func UpdateArticle(c *fiber.Ctx) error {
 		return c.Status(404).JSON(utils.ErrorResponse("ไม่พบบทความ"))
 	}
 
-	// ✅ ตรวจสอบสิทธิ์
+	// ✅ ตรวจสอบสิทธิ์เจ้าของบทความ
 	if article.AuthorID != userID {
 		return c.Status(403).JSON(utils.ErrorResponse("คุณไม่มีสิทธิ์แก้ไขบทความนี้"))
 	}
 
 	// ✅ รับ input จาก client
 	var input struct {
-		Title      string `json:"title"`
-		Content    string `json:"content"`
-		CategoryID uint   `json:"category_id"`
-		TagIDs     []uint `json:"tag_ids"`
+		Title      string   `json:"title"`
+		Content    string   `json:"content"`
+		CategoryID uint     `json:"category_id"`
+		TagIDs     []uint   `json:"tag_ids"`
+		NewTags    []string `json:"new_tags"` // 👈 รับแท็กใหม่
 	}
 
 	if err := c.BodyParser(&input); err != nil {
@@ -222,7 +227,7 @@ func UpdateArticle(c *fiber.Ctx) error {
 		return c.Status(400).JSON(utils.ErrorResponse("หมวดหมู่ไม่ถูกต้อง"))
 	}
 
-	// ✅ อัปเดต field หลัก
+	// ✅ อัปเดตข้อมูลหลัก
 	article.Title = input.Title
 	article.Content = input.Content
 	article.CategoryID = input.CategoryID
@@ -231,17 +236,47 @@ func UpdateArticle(c *fiber.Ctx) error {
 		return c.Status(500).JSON(utils.ErrorResponse("บันทึกบทความล้มเหลว"))
 	}
 
-	// ✅ โหลดแท็กใหม่และ Replace (แทนที่ทั้งหมด)
-	if len(input.TagIDs) > 0 {
-		var newTags []models.Tags
-		if err := database.DB.Where("id IN ?", input.TagIDs).Find(&newTags).Error; err != nil {
+	// ✅ ตรวจสอบและสร้างแท็กใหม่
+	var createdTags []models.Tags
+	for _, name := range input.NewTags {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+
+		var existing models.Tags
+		if err := database.DB.Where("LOWER(name) = ?", strings.ToLower(name)).First(&existing).Error; err == nil {
+			// พบอยู่แล้ว → ข้าม
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			// Error อื่น
+			return c.Status(500).JSON(utils.ErrorResponse("ตรวจสอบแท็กใหม่ล้มเหลว"))
+		}
+
+		newTag := models.Tags{Name: name}
+		if err := database.DB.Create(&newTag).Error; err != nil {
+			return c.Status(500).JSON(utils.ErrorResponse("สร้างแท็กใหม่ล้มเหลว"))
+		}
+		createdTags = append(createdTags, newTag)
+	}
+
+	// ✅ รวม TagIDs เดิม + ใหม่
+	allTagIDs := input.TagIDs
+	for _, tag := range createdTags {
+		allTagIDs = append(allTagIDs, tag.ID)
+	}
+
+	// ✅ แทนที่แท็กทั้งหมด
+	if len(allTagIDs) > 0 {
+		var allTags []models.Tags
+		if err := database.DB.Where("id IN ?", allTagIDs).Find(&allTags).Error; err != nil {
 			return c.Status(500).JSON(utils.ErrorResponse("โหลดแท็กใหม่ล้มเหลว"))
 		}
-		if err := database.DB.Model(&article).Association("Tags").Replace(&newTags); err != nil {
+		if err := database.DB.Model(&article).Association("Tags").Replace(&allTags); err != nil {
 			return c.Status(500).JSON(utils.ErrorResponse("อัปเดตแท็กล้มเหลว"))
 		}
 	} else {
-		// ✅ ถ้าไม่มีแท็กเลย ให้เคลียร์ความสัมพันธ์
+		// ✅ ถ้าไม่มีแท็ก → ลบความสัมพันธ์
 		if err := database.DB.Model(&article).Association("Tags").Clear(); err != nil {
 			return c.Status(500).JSON(utils.ErrorResponse("ลบแท็กเก่าไม่สำเร็จ"))
 		}
