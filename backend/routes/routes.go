@@ -28,7 +28,7 @@ func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
 
 	articles.Get("/my-articles", middleware.Protected(), controller.GetMyArticles) // ดูบทความที่ตัวเองเขียน
-	articles.Get("/", controller.SearchArticles)                                   // ดูทั้งหมด
+	articles.Get("/", controller.SearchArticlesTags)                                   // ค้นหาบทความและแท็ก
 	articles.Get("/:slug", controller.GetArticleBySlug)                            // ดูบทความตาม slug
 
 	articles.Post("/", middleware.Protected(), controller.CreateArticle) // สร้างบทความ

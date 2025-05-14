@@ -1,12 +1,16 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 
 const articles = ref([]);
 const categories = ref([]);
+const tags = ref([]);
+
 const selectedCategory = ref("");
+const selectedTag = ref("");
 const searchTerm = ref("");
 const loading = ref(true);
 
+// ✅ โหลดหมวดหมู่
 const fetchCategories = async () => {
   try {
     const res = await $fetch("/api/categories");
@@ -16,13 +20,24 @@ const fetchCategories = async () => {
   }
 };
 
+// ✅ โหลดแท็ก
+const fetchTags = async () => {
+  try {
+    const res = await $fetch("/api/tags");
+    tags.value = res.data || [];
+  } catch (err) {
+    console.error("❌ Failed to load tags:", err);
+  }
+};
+
+// ✅ โหลดบทความ
 const fetchArticles = async () => {
   loading.value = true;
   const query = new URLSearchParams();
 
   if (searchTerm.value) query.append("search", searchTerm.value);
-  if (selectedCategory.value)
-    query.append("category_id", selectedCategory.value);
+  if (selectedCategory.value) query.append("category_id", selectedCategory.value);
+  if (selectedTag.value) query.append("tag", selectedTag.value);
 
   try {
     const res = await $fetch(`/api/articles?${query.toString()}`);
@@ -37,45 +52,64 @@ const fetchArticles = async () => {
 
 onMounted(() => {
   fetchCategories();
+  fetchTags();
   fetchArticles();
 });
 
-// fetch ใหม่ทุกครั้งที่ filter เปลี่ยน
-watch([searchTerm, selectedCategory], fetchArticles);
+watch([searchTerm, selectedCategory, selectedTag], fetchArticles);
 </script>
 
 <template>
   <div class="max-w-4xl mx-auto py-8">
-    <h1 class="text-2xl font-bold mb-6">📚 Articles</h1>
+    <h1 class="text-2xl font-bold mb-6">📚 บทความทั้งหมด</h1>
 
     <!-- Filters -->
     <div class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 mb-6">
-      <input v-model="searchTerm" type="text" placeholder="🔍 Search articles..."
-        class="border px-4 py-2 rounded w-full md:w-1/2" />
-      <select v-model="selectedCategory" class="border px-4 py-2 rounded w-full md:w-1/3">
-        <option value="">All Categories</option>
+      <input
+        v-model="searchTerm"
+        type="text"
+        placeholder="🔍 ค้นหาบทความ..."
+        class="border px-4 py-2 rounded w-full md:w-1/2"
+      />
+
+      <select v-model="selectedCategory" class="border px-4 py-2 rounded w-full md:w-1/4">
+        <option value="">📂 ทุกหมวดหมู่</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">
           {{ cat.name }}
+        </option>
+      </select>
+
+      <select v-model="selectedTag" class="border px-4 py-2 rounded w-full md:w-1/4">
+        <option value="">🏷️ ทุกแท็ก</option>
+        <option v-for="tag in tags" :key="tag.id" :value="tag.name">
+          #{{ tag.name }}
         </option>
       </select>
     </div>
 
     <!-- Articles List -->
-    <div v-if="loading" class="text-gray-500">Loading articles...</div>
-    <div v-else-if="articles.length === 0" class="text-gray-500">
-      No articles found.
-    </div>
+    <div v-if="loading" class="text-gray-500">⏳ กำลังโหลดบทความ...</div>
+    <div v-else-if="articles.length === 0" class="text-gray-500">❌ ไม่พบบทความที่ตรงกัน</div>
     <div v-else>
-      <div v-for="article in articles" :key="article.id" class="border-b py-6">
-        <a class="text-xl font-semibold text-blue-600">
+      <div
+        v-for="article in articles"
+        :key="article.id"
+        class="border-b py-6"
+      >
+        <NuxtLink :to="`/articles/${article.slug}`" class="text-xl font-semibold text-blue-600 hover:underline">
           {{ article.title }}
-        </a>
+        </NuxtLink>
 
         <div class="text-sm text-gray-500 mt-1">
-          👤 {{ article.author?.username || "Unknown" }} | 📂
-          {{ article.category?.name || "Uncategorized" }} | 🏷️
-          <span v-for="tags in article.tags" :key="tags.id" class="bg-gray-200 rounded px-2 py-0.5 text-xs mr-1">
-            #{{ tags.name }}
+          👤 {{ article.author?.username || "Unknown" }} |
+          📂 {{ article.category?.name || "ไม่มีหมวดหมู่" }} |
+          🏷️
+          <span
+            v-for="tag in article.tags"
+            :key="tag.id"
+            class="bg-gray-200 rounded px-2 py-0.5 text-xs mr-1"
+          >
+            #{{ tag.name }}
           </span>
         </div>
 
@@ -87,10 +121,11 @@ watch([searchTerm, selectedCategory], fetchArticles);
           🕒 {{ new Date(article.created_at).toLocaleString() }}
         </div>
 
-        <!-- ✅ ปุ่ม อ่านต่อ -->
         <div class="mt-2">
-          <NuxtLink :to="`/articles/${article.slug}`"
-            class="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded inline-block">
+          <NuxtLink
+            :to="`/articles/${article.slug}`"
+            class="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded inline-block"
+          >
             อ่านต่อ
           </NuxtLink>
         </div>

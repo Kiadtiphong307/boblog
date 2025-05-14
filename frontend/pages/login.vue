@@ -1,40 +1,41 @@
 <script setup>
 definePageMeta({
-  layout: false
-})
+  layout: false,
+});
 
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 
-const emailOrUsername = ref('')
-const password = ref('')
-const error = ref('')
-const router = useRouter()
+const emailOrUsername = ref("");
+const password = ref("");
+const error = ref("");
+const router = useRouter();
 
 const login = async () => {
-  error.value = ''
+  error.value = "";
 
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        email: emailOrUsername.value, 
-        password: password.value }),
-    })
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: emailOrUsername.value,
+        password: password.value,
+      }),
+    });
 
-    const json = await res.json()
+    const json = await res.json();
 
     if (res.ok && json.data.token) {
-      localStorage.setItem('token', json.data.token)
-      router.push('/') // กลับไปหน้าแรกหลัง login สำเร็จ
+      localStorage.setItem("token", json.data.token);
+      router.push("/"); // กลับไปหน้าแรกหลัง login สำเร็จ
     } else {
-      error.value = json.error || 'เข้าสู่ระบบล้มเหลว'
+      error.value = json.error || "เข้าสู่ระบบล้มเหลว";
     }
   } catch (err) {
-    error.value = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์'
+    error.value = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์";
   }
-}
+};
 </script>
 
 <template>
@@ -57,10 +58,7 @@ const login = async () => {
           required
           class="input input-bordered w-full"
         />
-        <button
-          type="submit"
-          class="btn btn-primary w-full"
-        >
+        <button type="submit" class="btn btn-primary w-full">
           เข้าสู่ระบบ
         </button>
       </form>

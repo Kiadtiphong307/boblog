@@ -10,9 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-
 )
-
 
 // Get all articles
 func GetAllArticles(c *fiber.Ctx) error {
@@ -34,28 +32,37 @@ func GetAllArticles(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(articles, "All articles retrieved"))
 }
 
-// Search articles
-func SearchArticles(c *fiber.Ctx) error {
+// filter articles and tags
+func SearchArticlesTags(c *fiber.Ctx) error {
 	var articles []models.Article
 
 	search := c.Query("search")
 	categoryID := c.Query("category_id")
+	tag := c.Query("tag")
 
 	tx := database.DB.
+		Model(&models.Article{}).
+		Joins("LEFT JOIN article_tags ON article_tags.article_id = articles.id").
+		Joins("LEFT JOIN tags ON tags.id = article_tags.tags_id").
 		Preload("Author").
 		Preload("Category").
 		Preload("Tags").
-		Preload("Comments")
+		Preload("Comments").
+		Distinct()
 
 	if search != "" {
-		tx = tx.Where("title LIKE ?", "%"+search+"%")
+		tx = tx.Where("articles.title LIKE ?", "%"+search+"%")
 	}
 
 	if categoryID != "" {
-		tx = tx.Where("category_id = ?", categoryID)
+		tx = tx.Where("articles.category_id = ?", categoryID)
 	}
 
-	if err := tx.Find(&articles).Error; err != nil {
+	if tag != "" {
+		tx = tx.Where("LOWER(tags.name) = ?", strings.ToLower(tag))
+	}
+
+	if err := tx.Order("articles.created_at DESC").Find(&articles).Error; err != nil {
 		log.Println("❌ Error filtering articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to filter articles"))
 	}
@@ -63,6 +70,7 @@ func SearchArticles(c *fiber.Ctx) error {
 	log.Println("✅ Retrieved filtered articles")
 	return c.JSON(utils.SuccessResponse(articles, "Filtered articles retrieved"))
 }
+
 
 // Get article by slug
 func GetArticleBySlug(c *fiber.Ctx) error {
