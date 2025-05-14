@@ -37,7 +37,7 @@ type Comment struct {
 	Content   string    `gorm:"type:text;not null" json:"content"`
 	ArticleID uint      `gorm:"not null" json:"-"`
 	UserID    uint      `gorm:"not null" json:"-"`
-	User      User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
+	User      User      `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
 	Article   Article   `gorm:"foreignKey:ArticleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 }

@@ -49,3 +49,11 @@ func GetTagsAll(app *fiber.App) {
 	api.Get("/", controller.GetTags)
 }
 
+// คอมเมนต์
+func RegisterCommentRoutes(app *fiber.App) {
+    articles := app.Group("/articles")
+    articles.Post("/:slug/comments", middleware.Protected(), controller.CreateComment)
+    articles.Get("/:slug/comments", controller.GetComments)
+}
+
+

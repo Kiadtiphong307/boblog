@@ -8,19 +8,28 @@ const showDropdown = ref(false);
 const router = useRouter();
 
 const fetchUser = async () => {
+  if (!token.value) return
+
   try {
     const res = await fetch("/api/user", {
       headers: { Authorization: `Bearer ${token.value}` },
     });
+
+    if (res.status === 401) {
+      console.warn("🔒 Token หมดอายุ หรือไม่มีสิทธิ์");
+      logout()
+      return
+    }
 
     const json = await res.json();
     if (res.ok) {
       nickname.value = json.data.nickname;
     }
   } catch (err) {
-    console.error("ไม่สามารถโหลดข้อมูลผู้ใช้", err);
+    console.error("ไม่สามารถโหลดข้อมูลผู้ใช้:", err);
   }
 };
+
 
 const logout = () => {
   localStorage.removeItem("token");

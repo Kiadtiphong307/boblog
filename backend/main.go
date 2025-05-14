@@ -25,7 +25,8 @@ func main() {
 	routes.RegisterAuthRoutes(app) // สำหรับการสมัครสมาชิก และเข้าสู่ระบบ
 	routes.SearchedCategoryRoutes(app) // สำหรับการค้นหาหมวดหมู่
 	routes.RegisterArticleRoutes(app) // สำหรับการสร้าง แก้ไข และลบบทความ
-	routes.	GetTagsAll(app) // สำหรับการดึงข้อมูลแท็ก
+	routes.GetTagsAll(app) // สำหรับการดึงข้อมูลแท็ก
+	routes.RegisterCommentRoutes(app) // สำหรับการสร้าง และดึงข้อมูลคอมเมนต์
 
 	
 	protected := app.Group("/", middleware.Protected())
