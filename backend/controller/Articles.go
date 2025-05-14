@@ -38,7 +38,6 @@ func SearchArticlesTags(c *fiber.Ctx) error {
 
 	search := c.Query("search")
 	categoryID := c.Query("category_id")
-	tag := c.Query("tag")
 
 	tx := database.DB.
 		Model(&models.Article{}).
@@ -47,30 +46,33 @@ func SearchArticlesTags(c *fiber.Ctx) error {
 		Preload("Author").
 		Preload("Category").
 		Preload("Tags").
-		Preload("Comments").
 		Distinct()
 
+	// ✅ ถ้ามี keyword → ค้นหาทั้ง title, content, tags.name
 	if search != "" {
-		tx = tx.Where("articles.title LIKE ?", "%"+search+"%")
+		keywords := strings.Fields(strings.ToLower(search)) // แยกเป็นคำ เช่น “go fiber”
+		for _, kw := range keywords {
+			tx = tx.Where(`
+				LOWER(articles.title) LIKE ?
+				OR LOWER(articles.content) LIKE ?
+				OR LOWER(tags.name) LIKE ?
+			`, "%"+kw+"%", "%"+kw+"%", "%"+kw+"%")
+		}
 	}
 
+	// ✅ กรองหมวดหมู่ (ถ้ามี)
 	if categoryID != "" {
 		tx = tx.Where("articles.category_id = ?", categoryID)
 	}
 
-	if tag != "" {
-		tx = tx.Where("LOWER(tags.name) = ?", strings.ToLower(tag))
-	}
-
+	// ✅ ดึงผลลัพธ์
 	if err := tx.Order("articles.created_at DESC").Find(&articles).Error; err != nil {
 		log.Println("❌ Error filtering articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to filter articles"))
 	}
 
-	log.Println("✅ Retrieved filtered articles")
 	return c.JSON(utils.SuccessResponse(articles, "Filtered articles retrieved"))
 }
-
 
 // Get article by slug
 func GetArticleBySlug(c *fiber.Ctx) error {
