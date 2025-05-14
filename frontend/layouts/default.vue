@@ -4,11 +4,12 @@ import { useRouter } from "vue-router";
 
 const token = ref<string | null>(null);
 const nickname = ref<string | null>(null);
+const imageUrl = ref<string | null>(null);
 const showDropdown = ref(false);
 const router = useRouter();
 
 const fetchUser = async () => {
-  if (!token.value) return
+  if (!token.value) return;
 
   try {
     const res = await fetch("/api/user", {
@@ -17,24 +18,25 @@ const fetchUser = async () => {
 
     if (res.status === 401) {
       console.warn("🔒 Token หมดอายุ หรือไม่มีสิทธิ์");
-      logout()
-      return
+      logout();
+      return;
     }
 
     const json = await res.json();
     if (res.ok) {
       nickname.value = json.data.nickname;
+      imageUrl.value = json.data.image || null;
     }
   } catch (err) {
     console.error("ไม่สามารถโหลดข้อมูลผู้ใช้:", err);
   }
 };
 
-
 const logout = () => {
   localStorage.removeItem("token");
   token.value = null;
   nickname.value = null;
+  imageUrl.value = null;
   router.push("/");
 };
 
@@ -58,14 +60,11 @@ onMounted(() => {
         </NuxtLink>
         <NuxtLink
           to="/articles/create"
-          class="flex items-center text-lg text-black "
+          class="flex items-center text-lg text-black"
         >
           ✏️ เขียนบทความ
         </NuxtLink>
-        <NuxtLink
-          to="/articles"
-          class="flex items-center text-lg text-black"
-        >
+        <NuxtLink to="/articles" class="flex items-center text-lg text-black">
           🔍 ค้นหา
         </NuxtLink>
       </div>
@@ -86,14 +85,30 @@ onMounted(() => {
             @click="showDropdown = !showDropdown"
             class="flex items-center gap-2 cursor-pointer px-3 py-2 rounded hover:bg-gray-100 transition"
           >
+            <!-- ✅ ถ้ามีภาพ ให้แสดงภาพ -->
             <div
+              v-if="imageUrl"
+              class="w-8 h-8 rounded-full overflow-hidden border"
+            >
+              <img
+                :src="imageUrl"
+                alt="avatar"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
+            <!-- ❌ ถ้าไม่มีภาพ ให้ fallback เป็นตัวอักษร -->
+            <div
+              v-else
               class="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center text-white font-bold"
             >
               {{ nickname.charAt(0).toUpperCase() }}
             </div>
-            <span class="text-gray-800 font-medium hidden md:inline"
-              >สวัสดี, {{ nickname }}</span
-            >
+
+            <span class="text-gray-800 font-medium hidden md:inline">
+              สวัสดี, {{ nickname }}
+            </span>
+
             <svg
               class="h-4 w-4 text-gray-600"
               fill="none"

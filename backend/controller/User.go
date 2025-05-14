@@ -6,7 +6,10 @@ import (
 	"blog-db/utils"
 	"log"
 	"time"
-
+	"strings"
+	"fmt"
+	"path/filepath"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -147,19 +150,51 @@ func GetCurrentUser(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(user, "Current user"))
 }
 
-// แก้ไขข้อมูลผู้ใช้
+// อัปเดตข้อมูลผู้ใช้งานปัจจุบัน
 func UpdateCurrentUser(c *fiber.Ctx) error {
-	userID := c.Locals("userID").(uint)
-
-	var input struct {
-		FirstName string  `json:"first_name"`
-		LastName  string  `json:"last_name"`
-		Nickname  string  `json:"nickname"`
-		Bio       *string `json:"bio"`
+	userIDAny := c.Locals("userID")
+	userID, ok := userIDAny.(uint)
+	if !ok {
+		return c.Status(401).JSON(utils.ErrorResponse("Unauthorized"))
 	}
 
-	if err := c.BodyParser(&input); err != nil {
-		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+	formHeader := c.Get("Content-Type")
+	isMultipart := strings.Contains(strings.ToLower(formHeader), "multipart/form-data")
+
+	var (
+		firstName = c.FormValue("first_name")
+		lastName  = c.FormValue("last_name")
+		nickname  = c.FormValue("nickname")
+		bio       = c.FormValue("bio")
+		imageURL  *string
+	)
+
+	if isMultipart {
+		file, err := c.FormFile("avatar")
+		if err == nil && file != nil {
+			if !strings.HasPrefix(file.Header.Get("Content-Type"), "image/") {
+				return c.Status(400).JSON(utils.ErrorResponse("Invalid image format"))
+			}
+
+			ext := filepath.Ext(file.Filename)
+			filename := fmt.Sprintf("user_%d_%d%s", userID, time.Now().Unix(), ext)
+			savePath := fmt.Sprintf("./uploads/avatars/%s", filename)
+
+			// ✅ สร้างโฟลเดอร์หากยังไม่มี
+			if err := os.MkdirAll("./uploads/avatars", os.ModePerm); err != nil {
+				log.Println("❌ MkdirAll error:", err)
+				return c.Status(500).JSON(utils.ErrorResponse("Failed to prepare upload directory"))
+			}
+
+			// ✅ บันทึกไฟล์
+			if err := c.SaveFile(file, savePath); err != nil {
+				log.Println("❌ SaveFile error:", err)
+				return c.Status(500).JSON(utils.ErrorResponse("Failed to save image"))
+			}
+
+			imagePath := "/uploads/avatars/" + filename
+			imageURL = &imagePath
+		}
 	}
 
 	var user models.User
@@ -167,20 +202,25 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
 	}
 
-	user.FirstName = input.FirstName
-	user.LastName = input.LastName
-	user.Nickname = input.Nickname
-	user.Bio = input.Bio
+	user.FirstName = firstName
+	user.LastName = lastName
+	user.Nickname = nickname
+	if bio != "" {
+		user.Bio = &bio
+	}
+	if imageURL != nil {
+		user.Image = imageURL
+	}
 
 	if err := database.DB.Save(&user).Error; err != nil {
+		log.Println("❌ DB save error:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to update user"))
 	}
 
 	user.PasswordHash = ""
-	return c.JSON(utils.SuccessResponse(user, "Profile updated"))
+	return c.JSON(utils.SuccessResponse(user, "Profile updated successfully"))
 }
 
-// ลบบัญชีผู้ใช้
 
 	
 

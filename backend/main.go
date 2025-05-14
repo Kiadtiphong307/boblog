@@ -13,6 +13,9 @@ import (
 func main() {
 	app := fiber.New()
 
+	// สำหรับการส่งข้อมูลรูปภาพ
+	app.Static("/uploads", "/app/uploads")
+
 	database.Init()
 	database.DB.AutoMigrate(
 		&models.User{},
@@ -36,6 +39,7 @@ func main() {
 	seed.SeedCategories()
 	seed.SeedTags()  
 	seed.SeedUserAndArticles()
+
 
 	app.Listen(":8080")
 
