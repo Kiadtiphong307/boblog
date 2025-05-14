@@ -45,7 +45,6 @@ const deleteArticle = async (slug) => {
       },
     })
 
-    // ลบออกจาก array บน frontend
     articles.value = articles.value.filter((a) => a.slug !== slug)
     alert('✅ ลบบทความเรียบร้อยแล้ว')
   } catch (err) {
@@ -54,7 +53,6 @@ const deleteArticle = async (slug) => {
     alert(`❌ ${message}`)
   }
 }
-
 
 onMounted(() => {
   fetchMyArticles()
@@ -67,30 +65,32 @@ onMounted(() => {
 
     <div v-if="loading">⏳ กำลังโหลดบทความ...</div>
     <div v-if="error" class="text-red-500">{{ error }}</div>
-
     <div v-if="articles.length === 0 && !loading">ยังไม่มีบทความ</div>
 
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        v-for="article in articles"
-        :key="article.id"
-        class="p-4 border rounded shadow hover:shadow-md transition"
-      >
+      <div v-for="article in articles" :key="article.id" class="p-4 border rounded shadow hover:shadow-md transition">
         <h2 class="text-xl font-semibold">{{ article.title }}</h2>
         <p class="text-gray-600 mt-2 line-clamp-3">{{ article.description }}</p>
-        <p class="text-sm text-gray-400 mt-4">🗓 {{ new Date(article.created_at).toLocaleDateString() }}</p>
+        <p class="text-sm text-gray-400 mt-4">
+          🗓 {{ new Date(article.created_at).toLocaleDateString() }}
+        </p>
 
-        <div class="mt-4 flex gap-2">
-          <NuxtLink
-            :to="`/articles/edit/${article.slug}`"
-            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
+        <!-- ปุ่มต่าง ๆ -->
+        <div class="mt-4 flex gap-2 flex-wrap">
+          <!-- 👁 ดูบทความ -->
+          <NuxtLink :to="`/articles/${article.slug}`"
+            class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+            👁 ดูบทความ
+          </NuxtLink>
+
+          <!-- ✏️ แก้ไข -->
+          <NuxtLink :to="`/articles/edit/${article.slug}`"
+            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
             ✏️ แก้ไข
           </NuxtLink>
-          <button
-            @click="deleteArticle(article.slug)"
-            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-          >
+
+          <!-- 🗑 ลบ -->
+          <button @click="deleteArticle(article.slug)" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
             🗑 ลบ
           </button>
         </div>

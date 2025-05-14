@@ -5,11 +5,14 @@ import (
 	"blog-db/models"
 	"blog-db/utils"
 	"log"
+	"net/url"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+
 )
+
 
 // Get all articles
 func GetAllArticles(c *fiber.Ctx) error {
@@ -101,65 +104,77 @@ func GetMyArticles(c *fiber.Ctx) error {
 
 // CreateArticle creates a new article
 func CreateArticle(c *fiber.Ctx) error {
-    var input struct {
-        Title      string   `json:"title" validate:"required"`
-        Slug       string   `json:"slug" validate:"required"`
-        Content    string   `json:"content" validate:"required"`
-        CategoryID uint     `json:"category_id" validate:"required"`
-        TagNames   []string `json:"tag_ids"` // ✅ ควรใช้ชื่อเป็น TagNames ถ้าส่งเป็น string
-    }
+	var input struct {
+		Title        string   `json:"title" validate:"required"`
+		Slug         string   `json:"slug" validate:"required"`
+		Content      string   `json:"content" validate:"required"`
+		CategoryName string   `json:"category_name" validate:"required"` // ✅ รับชื่อหมวดหมู่
+		TagNames     []string `json:"tag_names"`
+	}
 
-    if err := c.BodyParser(&input); err != nil {
-        return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
-    }
+	// ✅ แปลง JSON เป็น struct
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+	}
 
-    if err := validate.Struct(input); err != nil {
-        return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
-    }
+	// ✅ ตรวจสอบข้อมูล
+	if err := validate.Struct(input); err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Validation failed: " + err.Error()))
+	}
 
-    var existArticle models.Article
-    if err := database.DB.Where("slug = ?", input.Slug).First(&existArticle).Error; err == nil {
-        return c.Status(400).JSON(utils.ErrorResponse("Slug already exists"))
-    }
+	// ✅ ตรวจ slug ซ้ำ
+	var exist models.Article
+	if err := database.DB.Where("slug = ?", input.Slug).First(&exist).Error; err == nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Slug already exists"))
+	}
 
-    userToken := c.Locals("user").(*jwt.Token)
-    claims := userToken.Claims.(jwt.MapClaims)
-    authorID := uint(claims["id"].(float64))
+	// ✅ ดึง user ID จาก JWT
+	userToken := c.Locals("user").(*jwt.Token)
+	claims := userToken.Claims.(jwt.MapClaims)
+	authorID := uint(claims["id"].(float64))
 
-    // ✅ สร้างหรือค้นหาแท็ก
-    var tags []models.Tags
-    for _, name := range input.TagNames {
-        name = strings.TrimSpace(name)
-        if name == "" {
-            continue
-        }
-        var tag models.Tags
-        if err := database.DB.Where("name = ?", name).First(&tag).Error; err != nil {
-            tag = models.Tags{Name: name}
-            if err := database.DB.Create(&tag).Error; err != nil {
-                return c.Status(500).JSON(utils.ErrorResponse("Failed to create tag: " + name))
-            }
-        }
-        tags = append(tags, tag)
-    }
+	// ✅ ตรวจสอบหรือสร้างหมวดหมู่
+	var category models.Category
+	if err := database.DB.Where("name = ?", input.CategoryName).First(&category).Error; err != nil {
+		category = models.Category{Name: input.CategoryName}
+		if err := database.DB.Create(&category).Error; err != nil {
+			return c.Status(500).JSON(utils.ErrorResponse("Failed to create category: " + input.CategoryName))
+		}
+	}
 
-    article := models.Article{
-        Title:      input.Title,
-        Slug:       input.Slug,
-        Content:    input.Content,
-        AuthorID:   authorID,
-        CategoryID: input.CategoryID,
-        Tags:       tags, // ✅ หลายแท็ก
-    }
+	// ✅ ตรวจสอบหรือสร้าง tag
+	var tags []models.Tags
+	for _, name := range input.TagNames {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		var tag models.Tags
+		if err := database.DB.Where("name = ?", name).First(&tag).Error; err != nil {
+			tag = models.Tags{Name: name}
+			if err := database.DB.Create(&tag).Error; err != nil {
+				return c.Status(500).JSON(utils.ErrorResponse("Failed to create tag: " + name))
+			}
+		}
+		tags = append(tags, tag)
+	}
 
-    if err := database.DB.Create(&article).Error; err != nil {
-        return c.Status(500).JSON(utils.ErrorResponse("Failed to create article"))
-    }
+	// ✅ บันทึกบทความ
+	article := models.Article{
+		Title:      input.Title,
+		Slug:       input.Slug,
+		Content:    input.Content,
+		AuthorID:   authorID,
+		CategoryID: category.ID,
+		Tags:       tags,
+	}
 
-    return c.Status(201).JSON(utils.SuccessResponse(article, "Article created successfully"))
+	if err := database.DB.Create(&article).Error; err != nil {
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to create article"))
+	}
+
+	return c.Status(201).JSON(utils.SuccessResponse(article, "✅ Article created successfully"))
 }
-
-
 
 // UpdateArticle updates an existing article
 func UpdateArticle(c *fiber.Ctx) error {
@@ -225,11 +240,13 @@ func UpdateArticle(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(article, "แก้ไขบทความเรียบร้อยแล้ว"))
 }
 
-
-
 // DeleteArticle deletes an article by slug (only by the author)
 func DeleteArticle(c *fiber.Ctx) error {
-	slug := c.Params("slug")
+	encodedSlug := c.Params("slug")
+	slug, err := url.QueryUnescape(encodedSlug)
+	if err != nil {
+		return c.Status(400).JSON(utils.ErrorResponse("Slug ไม่ถูกต้อง"))
+	}
 
 	// ดึงข้อมูล user จาก JWT
 	user := c.Locals("user").(*jwt.Token)
@@ -247,15 +264,13 @@ func DeleteArticle(c *fiber.Ctx) error {
 		return c.Status(403).JSON(utils.ErrorResponse("คุณไม่มีสิทธิ์ลบบทความนี้"))
 	}
 
-	// 🔁 ลบความสัมพันธ์กับแท็กในตารางกลาง
+	// ลบความสัมพันธ์กับแท็ก
 	if err := database.DB.Model(&article).Association("Tags").Clear(); err != nil {
 		log.Println("❌ ลบความสัมพันธ์กับ Tags ไม่สำเร็จ:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("ลบแท็กของบทความไม่สำเร็จ"))
 	}
 
-	// ❌ หมายเหตุ: ถ้ามี comment หรือ relations อื่น ต้องพิจารณาลบ cascade
-
-	// ✅ ลบบทความ
+	// ลบบทความ
 	if err := database.DB.Delete(&article).Error; err != nil {
 		log.Println("🔥 ลบบทความไม่สำเร็จ:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("ลบบทความไม่สำเร็จ"))
@@ -263,4 +278,3 @@ func DeleteArticle(c *fiber.Ctx) error {
 
 	return c.JSON(utils.SuccessResponse(nil, "ลบบทความเรียบร้อยแล้ว"))
 }
-

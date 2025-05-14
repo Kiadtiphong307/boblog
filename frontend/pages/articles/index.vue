@@ -35,7 +35,6 @@ const fetchArticles = async () => {
   loading.value = false;
 };
 
-
 onMounted(() => {
   fetchCategories();
   fetchArticles();
@@ -50,19 +49,10 @@ watch([searchTerm, selectedCategory], fetchArticles);
     <h1 class="text-2xl font-bold mb-6">📚 Articles</h1>
 
     <!-- Filters -->
-    <div
-      class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 mb-6"
-    >
-      <input
-        v-model="searchTerm"
-        type="text"
-        placeholder="🔍 Search articles..."
-        class="border px-4 py-2 rounded w-full md:w-1/2"
-      />
-      <select
-        v-model="selectedCategory"
-        class="border px-4 py-2 rounded w-full md:w-1/3"
-      >
+    <div class="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 mb-6">
+      <input v-model="searchTerm" type="text" placeholder="🔍 Search articles..."
+        class="border px-4 py-2 rounded w-full md:w-1/2" />
+      <select v-model="selectedCategory" class="border px-4 py-2 rounded w-full md:w-1/3">
         <option value="">All Categories</option>
         <option v-for="cat in categories" :key="cat.id" :value="cat.id">
           {{ cat.name }}
@@ -77,21 +67,14 @@ watch([searchTerm, selectedCategory], fetchArticles);
     </div>
     <div v-else>
       <div v-for="article in articles" :key="article.id" class="border-b py-6">
-        <NuxtLink
-          :to="`/articles/${article.slug}`"
-          class="text-xl font-semibold text-blue-600 hover:underline"
-        >
+        <a class="text-xl font-semibold text-blue-600">
           {{ article.title }}
-        </NuxtLink>
+        </a>
 
         <div class="text-sm text-gray-500 mt-1">
           👤 {{ article.author?.username || "Unknown" }} | 📂
           {{ article.category?.name || "Uncategorized" }} | 🏷️
-          <span
-            v-for="tags in article.tags"
-            :key="tags.id"
-            class="bg-gray-200 rounded px-2 py-0.5 text-xs mr-1"
-          >
+          <span v-for="tags in article.tags" :key="tags.id" class="bg-gray-200 rounded px-2 py-0.5 text-xs mr-1">
             #{{ tags.name }}
           </span>
         </div>
@@ -102,6 +85,14 @@ watch([searchTerm, selectedCategory], fetchArticles);
 
         <div class="text-xs text-gray-400 mt-2">
           🕒 {{ new Date(article.created_at).toLocaleString() }}
+        </div>
+
+        <!-- ✅ ปุ่ม อ่านต่อ -->
+        <div class="mt-2">
+          <NuxtLink :to="`/articles/${article.slug}`"
+            class="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-1 rounded inline-block">
+            อ่านต่อ
+          </NuxtLink>
         </div>
       </div>
     </div>
