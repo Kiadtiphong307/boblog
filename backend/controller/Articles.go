@@ -14,6 +14,9 @@ import (
 	"gorm.io/gorm"
 )
 
+
+
+
 // Get all articles
 func GetAllArticles(c *fiber.Ctx) error {
 	var articles []models.Article

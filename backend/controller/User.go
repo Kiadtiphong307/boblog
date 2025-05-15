@@ -202,9 +202,15 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 		return c.Status(404).JSON(utils.ErrorResponse("User not found"))
 	}
 
-	user.FirstName = firstName
-	user.LastName = lastName
-	user.Nickname = nickname
+	if firstName != "" {
+		user.FirstName = firstName
+	}
+	if lastName != "" {
+		user.LastName = lastName
+	}
+	if nickname != "" {
+		user.Nickname = nickname
+	}
 	if bio != "" {
 		user.Bio = &bio
 	}
