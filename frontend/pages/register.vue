@@ -5,6 +5,7 @@ definePageMeta({
 
 import { ref } from 'vue'
 
+// Register Form
 const form = ref({
   username: '',
   email: '',
@@ -23,7 +24,7 @@ const register = async () => {
     error.value = ''
     success.value = ''
 
-    // ✅ ตรวจสอบรหัสผ่านตรงกันก่อนส่ง
+    // Check Password
     if (form.value.password !== form.value.confirm_password) {
         error.value = '❌ รหัสผ่านไม่ตรงกัน'
         console.error('❌ รหัสผ่านไม่ตรงกัน')
@@ -50,7 +51,7 @@ const register = async () => {
         if (res.ok) {
             success.value = '✅ สมัครสมาชิกสำเร็จ'
             console.log('✅ สมัครสมาชิกสำเร็จ:', json)
-            // ✅ ล้างฟอร์ม
+
             form.value = { 
                 username: '', 
                 email: '', 

@@ -13,7 +13,7 @@ import (
 func main() {
 	app := fiber.New()
 
-	// สำหรับการส่งข้อมูลรูปภาพ
+	// For sending image data
 	app.Static("/uploads", "/app/uploads")
 
 	database.Init()
@@ -25,17 +25,17 @@ func main() {
 		&models.Tags{},
 	)
 
-	routes.RegisterAuthRoutes(app) // สำหรับการสมัครสมาชิก และเข้าสู่ระบบ
-	routes.SearchedCategoryRoutes(app) // สำหรับการค้นหาหมวดหมู่
-	routes.RegisterArticleRoutes(app) // สำหรับการสร้าง แก้ไข และลบบทความ
-	routes.GetTagsAll(app) // สำหรับการดึงข้อมูลแท็ก
-	routes.RegisterCommentRoutes(app) // สำหรับการสร้าง และดึงข้อมูลคอมเมนต์
+	routes.RegisterAuthRoutes(app) // For registering and logging in
+	routes.SearchedCategoryRoutes(app) // For searching categories
+	routes.RegisterArticleRoutes(app) // For creating, updating, and deleting articles
+	routes.GetTagsAll(app) // For getting tag data
+	routes.RegisterCommentRoutes(app) // For creating and getting comments
 
 	
 	protected := app.Group("/", middleware.Protected())
 	routes.RegisterUserRoutes(protected) 
 	
-	// จำลองข้อมูล สำหรับทดสอบ
+	// Simulate data for testing
 	seed.SeedCategories()
 	seed.SeedTags()  
 	seed.SeedUserAndArticles()

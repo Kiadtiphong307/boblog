@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-// ✅ ดึงรายชื่อหมวดหมู่ทั้งหมด
+// Get All Categories
 func GetCategories(c *fiber.Ctx) error {
 	var categories []models.Category
 

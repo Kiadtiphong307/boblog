@@ -7,11 +7,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("secret") // เปลี่ยนเป็น env ในโปรดักชัน
+// JWT Secret
+var jwtSecret = []byte("secret") 
 
+// Protected
 func Protected() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// ดึง Authorization header
+		// Get Authorization header
 		tokenStr := c.Get("Authorization")
 		if tokenStr == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -19,7 +21,7 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// ตรวจรูปแบบ Bearer <token>
+		// Check Bearer <token>
 		parts := strings.SplitN(tokenStr, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -28,7 +30,7 @@ func Protected() fiber.Handler {
 		}
 		tokenStr = parts[1]
 
-		// แปลงและตรวจสอบ JWT
+		// Parse and validate JWT
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 			return jwtSecret, nil
 		})
@@ -38,7 +40,7 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// แปลง claims
+		// Convert claims
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || claims["id"] == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -46,7 +48,7 @@ func Protected() fiber.Handler {
 			})
 		}
 
-		// แปลง userID จาก float64 → uint อย่างปลอดภัย
+		// Convert userID from float64 to uint safely
 		userIDFloat, ok := claims["id"].(float64)
 		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -55,7 +57,7 @@ func Protected() fiber.Handler {
 		}
 		userID := uint(userIDFloat)
 
-		// เก็บ userID ลง context
+		// Store userID in context
 		c.Locals("userID", userID)
 		c.Locals("user", token)
 

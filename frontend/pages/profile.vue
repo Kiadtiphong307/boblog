@@ -17,6 +17,7 @@ const success = ref("");
 const error = ref("");
 const loading = ref(false);
 
+// Fetch Profile
 const fetchProfile = async () => {
   loading.value = true;
   try {
@@ -38,6 +39,7 @@ const fetchProfile = async () => {
   }
 };
 
+// Handle File Change
 const handleFileChange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -54,6 +56,7 @@ const handleFileChange = (e) => {
   previewImage.value = URL.createObjectURL(file); // show preview
 };
 
+// Update Profile
 const updateProfile = async () => {
   success.value = "";
   error.value = "";
@@ -106,52 +109,43 @@ onMounted(fetchProfile);
     <div v-if="error" class="text-red-600 mb-4">{{ error }}</div>
 
     <form @submit.prevent="updateProfile" class="space-y-4">
-      <!-- รูปโปรไฟล์ -->
+      <!-- Avatar -->
       <div v-if="previewImage" class="mb-4">
         <img :src="previewImage" alt="avatar" class="w-24 h-24 object-cover rounded-full border" />
       </div>
 
+      <!-- Change Avatar -->
       <div>
         <label class="block mb-1 font-medium">เปลี่ยนรูปโปรไฟล์</label>
         <input type="file" accept="image/*" @change="handleFileChange" />
         <p class="text-xs text-gray-500 mt-1">ขนาดไม่เกิน 10MB</p>
       </div>
 
+      <!-- First Name -->
       <div>
         <label class="block mb-1 font-medium">ชื่อ</label>
-        <input
-          v-model="form.first_name"
-          type="text"
-          class="w-full p-2 border rounded"
-        />
+        <input v-model="form.first_name" type="text" class="w-full p-2 border rounded" />
       </div>
 
+      <!-- Last Name -->
       <div>
         <label class="block mb-1 font-medium">นามสกุล</label>
-        <input
-          v-model="form.last_name"
-          type="text"
-          class="w-full p-2 border rounded"
-        />
+        <input v-model="form.last_name" type="text" class="w-full p-2 border rounded" />
       </div>
 
+      <!-- Nickname -->
       <div>
         <label class="block mb-1 font-medium">ชื่อเล่น</label>
-        <input
-          v-model="form.nickname"
-          type="text"
-          class="w-full p-2 border rounded"
-        />
+        <input v-model="form.nickname" type="text" class="w-full p-2 border rounded" />
       </div>
 
+      <!-- Bio -->
       <div>
         <label class="block mb-1 font-medium">เกี่ยวกับฉัน</label>
-        <textarea
-          v-model="form.bio"
-          class="w-full p-2 border rounded"
-        ></textarea>
+        <textarea v-model="form.bio" class="w-full p-2 border rounded"></textarea>
       </div>
 
+      <!-- Save Button -->
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
         บันทึก
       </button>

@@ -7,14 +7,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// สมัครสมาชิก และเข้าสู่ระบบ
+// Register Auth Routes
 func RegisterAuthRoutes(app *fiber.App) {
 	auth := app.Group("/auth")
 	auth.Post("/register", controller.Register)
 	auth.Post("/login", controller.Login)
 }
 
-// ข้อมูลผู้ใช้งานปัจจุบัน
+// User Routes
 func RegisterUserRoutes(r fiber.Router) {
 	users := r.Group("/user", middleware.Protected())
 
@@ -23,7 +23,7 @@ func RegisterUserRoutes(r fiber.Router) {
 
 }
 
-// บทความ
+// Article Routes
 func RegisterArticleRoutes(app *fiber.App) {
 	articles := app.Group("/articles")
 
@@ -37,19 +37,19 @@ func RegisterArticleRoutes(app *fiber.App) {
 
 }
 
-// ค้นหาหมวดหมู่
+// Search Category Routes
 func SearchedCategoryRoutes(app *fiber.App) {
 	category := app.Group("/categories")
 	category.Get("/", controller.GetCategories)
 }
 
-// ดึงข้อมูลแท็ก
+// Get Tags Routes
 func GetTagsAll(app *fiber.App) {
 	api := app.Group("/tags")
 	api.Get("/", controller.GetTags)
 }
 
-// คอมเมนต์
+// Comment Routes
 func RegisterCommentRoutes(app *fiber.App) {
     articles := app.Group("/articles")
     articles.Post("/:slug/comments", middleware.Protected(), controller.CreateComment)

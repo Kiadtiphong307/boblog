@@ -7,7 +7,7 @@ const selectedCategory = ref("");
 const searchTerm = ref("");
 const loading = ref(true);
 
-// โหลดหมวดหมู่
+// Fetch Categories
 const fetchCategories = async () => {
   try {
     const res = await $fetch("/api/categories");
@@ -41,7 +41,7 @@ const fetchArticles = async () => {
   }
 };
 
-// แปลงวันที่ให้อ่านง่าย
+// Format Date
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString("th-TH", {
@@ -91,34 +91,34 @@ watch([searchTerm, selectedCategory], fetchArticles);
           :key="article.id"
           class="bg-white rounded-xl shadow p-6 flex flex-col justify-between"
         >
-          <!-- หมวดหมู่ -->
+          <!-- Category -->
           <div class="mb-2">
             <span class="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
               {{ article.category?.name || "ไม่มีหมวดหมู่" }}
             </span>
           </div>
 
-          <!-- ชื่อบทความ -->
+          <!-- Article Title -->
           <h2 class="text-lg font-bold mb-1">
             {{ article.title }}
           </h2>
 
-          <!-- วันที่ -->
+          <!-- Date -->
           <p class="text-xs text-gray-400 mb-2">
             {{ formatDate(article.created_at || article.createdAt) }}
           </p>
 
-          <!-- ย่อเนื้อหา -->
+          <!-- Summary -->
           <p class="text-gray-700 text-sm mb-3">
             {{ (article.content || '').slice(0, 120) }}...
           </p>
 
-          <!-- ผู้เขียน -->
+          <!-- Author -->
           <p class="text-sm text-gray-500 mb-2">
             ผู้เขียน: <span class="font-medium">{{ article.author?.username || "ไม่ทราบชื่อ" }}</span>
           </p>
 
-          <!-- แท็ก -->
+          <!-- Tags -->
           <div class="mb-4">
             <span
               v-for="tag in article.tags"
@@ -129,7 +129,7 @@ watch([searchTerm, selectedCategory], fetchArticles);
             </span>
           </div>
 
-          <!-- ปุ่มอ่านเพิ่มเติม -->
+          <!-- Read More Button -->
           <NuxtLink
             :to="`/articles/${article.slug}`"
             class="self-start inline-block bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600 transition"

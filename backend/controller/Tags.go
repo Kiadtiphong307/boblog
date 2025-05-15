@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-// ✅ ดึงรายชื่อหมวดหมู่ทั้งหมด
+// Get All Tags
 func GetTags(c *fiber.Ctx) error {
 	var tags []models.Tags
 

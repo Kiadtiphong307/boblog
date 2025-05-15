@@ -6,15 +6,16 @@ import { useRuntimeConfig } from "#app";
 const config = useRuntimeConfig();
 const router = useRouter();
 
+// Fields
 const title = ref("");
-const slug = ref(""); // generate จาก title
+const slug = ref("");
 const content = ref("");
-const categoryName = ref(""); // 🟢 ใช้ชื่อหมวดหมู่แทน ID
+const categoryName = ref("");
 const tags = ref("");
 const error = ref("");
 const success = ref(false);
 
-// ฟังก์ชันสร้าง slug
+// Function to create slug
 const slugify = (text: string): string =>
   text
     .toLowerCase()
@@ -23,12 +24,12 @@ const slugify = (text: string): string =>
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-// generate slug อัตโนมัติ
+// Generate slug automatically
 watch(title, (newTitle) => {
   slug.value = slugify(newTitle);
 });
 
-// ฟอร์ม submit
+// Form submit
 const handleSubmit = async () => {
   error.value = "";
   success.value = false;
@@ -68,43 +69,20 @@ const handleSubmit = async () => {
   <div class="max-w-xl mx-auto py-8">
     <h1 class="text-2xl font-bold mb-4">📝 สร้างบทความ</h1>
 
+    <!-- Form -->
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <input
-        v-model="title"
-        type="text"
-        placeholder="ชื่อบทความ"
-        class="w-full p-2 border rounded"
-        required
-      />
+      <input v-model="title" type="text" placeholder="ชื่อบทความ" class="w-full p-2 border rounded" required />
       <p class="text-sm text-gray-500">🔗 Slug ที่สร้าง: {{ slug }}</p>
 
-      <textarea
-        v-model="content"
-        placeholder="เนื้อหา"
-        class="w-full p-2 border rounded"
-        rows="6"
-        required
-      />
+      <textarea v-model="content" placeholder="เนื้อหา" class="w-full p-2 border rounded" rows="6" required />
 
-      <input
-        v-model="categoryName"
-        type="text"
-        placeholder="หมวดหมู่ (เช่น ข่าว, บทความ)"
-        class="w-full p-2 border rounded"
-        required
-      />
+      <input v-model="categoryName" type="text" placeholder="หมวดหมู่ (เช่น ข่าว, บทความ)"
+        class="w-full p-2 border rounded" required />
 
-      <input
-        v-model="tags"
-        type="text"
-        placeholder="แท็ก (คั่นด้วย , เช่น go, fiber)"
-        class="w-full p-2 border rounded"
-      />
+      <input v-model="tags" type="text" placeholder="แท็ก (คั่นด้วย , เช่น go, fiber)"
+        class="w-full p-2 border rounded" />
 
-      <button
-        type="submit"
-        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-      >
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
         ➕ สร้างบทความ
       </button>
     </form>

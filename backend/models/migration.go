@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// User Model
 type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Username     string    `gorm:"unique" json:"username"`
@@ -14,13 +15,11 @@ type User struct {
 	Image        *string   `json:"image,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
-
-	// 👇 Optional: Reverse Relations (ไม่จำเป็นต้อง preload)
 	Articles []Article `gorm:"foreignKey:AuthorID" json:"-"`
 	Comments []Comment `gorm:"foreignKey:UserID" json:"-"`
 }
 
-
+// Article Model
 type Article struct {
 	ID         uint       `gorm:"primaryKey" json:"id"`
 	Title      string     `gorm:"not null" json:"title"`
@@ -36,7 +35,7 @@ type Article struct {
 	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
-
+// Comment Model
 type Comment struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
 	Content   string    `gorm:"type:text;not null" json:"content"`
@@ -47,13 +46,14 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-
+// Category Model
 type Category struct {
 	ID       uint      `gorm:"primaryKey" json:"id"`
 	Name     string    `gorm:"unique;not null" json:"name"`
 	Articles []Article `gorm:"foreignKey:CategoryID" json:"-"`
 }
 
+// Tags Model
 type Tags struct {
 	ID   uint   `gorm:"primaryKey" json:"id"`
 	Name string `gorm:"unique;not null" json:"name"`
