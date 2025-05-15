@@ -46,9 +46,9 @@ const login = async () => {
 
       <!-- Form -->
       <form @submit.prevent="login" class="space-y-4">
-        <input v-model="emailOrUsername" type="text" placeholder="Email or Username" required
+        <input v-model="emailOrUsername" type="text" placeholder="อีเมลหรือชื่อผู้ใช้งาน" required
           class="input input-bordered w-full" />
-        <input v-model="password" type="password" placeholder="Password" required class="input input-bordered w-full" />
+        <input v-model="password" type="password" placeholder="รหัสผ่าน" required class="input input-bordered w-full" />
         <button type="submit" class="btn btn-primary w-full">
           เข้าสู่ระบบ
         </button>

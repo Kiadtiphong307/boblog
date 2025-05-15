@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, watch } from "vue";
 
 const articles = ref([]);
@@ -42,7 +42,7 @@ const fetchArticles = async () => {
 };
 
 // Format Date
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString("th-TH", {
     year: "numeric",

@@ -1,4 +1,4 @@
-<script setup>
+เิอออออออออออออออ <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -18,7 +18,6 @@ const fetchMyArticles = async () => {
         Authorization: `Bearer ${token}`,
       },
     })
-
     articles.value = res?.data || []
   } catch (err) {
     error.value = '❌ ไม่สามารถโหลดบทความของคุณได้'
@@ -54,43 +53,84 @@ const deleteArticle = async (slug) => {
   }
 }
 
+const formatDateTime = (input) => {
+  const date = new Date(input)
+  return date.toLocaleString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  .465278
+
+  ล
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ฃฃ
+}
+
 onMounted(() => {
   fetchMyArticles()
 })
 </script>
 
 <template>
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-6">📝 บทความของฉัน</h1>
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">📝 บทความของฉัน</h1>
 
-    <div v-if="loading">⏳ กำลังโหลดบทความ...</div>
-    <div v-if="error" class="text-red-500">{{ error }}</div>
-    <div v-if="articles.length === 0 && !loading">ยังไม่มีบทความ</div>
+    <div v-if="loading" class="text-gray-600">⏳ กำลังโหลดบทความ...</div>
+    <div v-if="error" class="text-red-500 font-semibold">{{ error }}</div>
+    <div v-if="articles.length === 0 && !loading" class="text-gray-500">ยังไม่มีบทความ</div>
 
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="article in articles" :key="article.id" class="p-4 border rounded shadow hover:shadow-md transition">
-        <h2 class="text-xl font-semibold">{{ article.title }}</h2>
-        <p class="text-gray-600 mt-2 line-clamp-3">{{ article.description }}</p>
-        <p class="text-sm text-gray-400 mt-4">
-          🗓 {{ new Date(article.created_at).toLocaleDateString() }}
+    <div class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        v-for="article in articles"
+        :key="article.id"
+        class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 hover:shadow-md transition duration-200"
+      >
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ article.title }}</h2>
+        <p class="text-gray-600 text-sm line-clamp-3 mb-4">
+          {{ article.description }}
         </p>
+        <p class="text-xs text-gray-400">
+          🗓 {{ formatDateTime(article.created_at) }}
+        </p>
+        
 
-        <!-- ปุ่มต่าง ๆ -->
-        <div class="mt-4 flex gap-2 flex-wrap">
-          <!-- 👁 ดูบทความ -->
-          <NuxtLink :to="`/articles/${article.slug}`"
-            class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
+        <div class="mt-6 flex flex-wrap gap-2">
+          <NuxtLink
+            :to="`/articles/${article.slug}`"
+            class="inline-block px-4 py-1.5 text-sm rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+          >
             👁 ดูบทความ
           </NuxtLink>
 
-          <!-- ✏️ แก้ไข -->
-          <NuxtLink :to="`/articles/edit/${article.slug}`"
-            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+          <NuxtLink
+            :to="`/articles/edit/${article.slug}`"
+            class="inline-block px-4 py-1.5 text-sm rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition"
+          >
             ✏️ แก้ไข
           </NuxtLink>
 
-          <!-- 🗑 ลบ -->
-          <button @click="deleteArticle(article.slug)" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+          <button
+            @click="deleteArticle(article.slug)"
+            class="inline-block px-4 py-1.5 text-sm rounded-xl bg-red-600 text-white hover:bg-red-700 transition"
+          >
             🗑 ลบ
           </button>
         </div>
