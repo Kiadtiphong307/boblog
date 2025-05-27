@@ -22,7 +22,6 @@ var validate = validator.New()
 var jwtSecret = []byte("secret") 
 
 // Register
-
 func Register(c *fiber.Ctx) error {
 	var input struct {
 		Username        string `json:"username" validate:"required,min=3"`
@@ -296,3 +295,4 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 
 
 
+	

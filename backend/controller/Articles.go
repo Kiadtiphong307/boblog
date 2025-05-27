@@ -19,6 +19,7 @@ import (
 func GetAllArticles(c *fiber.Ctx) error {
 	var articles []models.Article
 
+	//q
 	err := database.DB.
 		Preload("Author").
 		Preload("Category").

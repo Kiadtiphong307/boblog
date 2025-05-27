@@ -13,13 +13,16 @@ import (
 
 // Get Comments
 func GetComments(c *fiber.Ctx) error {
+	//  Params & Query
     slugEncoded := c.Params("slug")
+	// ทำงานยังไง
     slug, err := url.QueryUnescape(slugEncoded)
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid slug encoding"})
     }
-
+	// วิธีการใช้ var , := 
     var article models.Article
+	//  ORM 
     if err := database.DB.Where("slug = ?", slug).First(&article).Error; err != nil {
         return c.Status(404).JSON(fiber.Map{"error": "Article not found"})
     }
@@ -28,8 +31,10 @@ func GetComments(c *fiber.Ctx) error {
     if err := database.DB.
         Preload("User").
         Order("created_at desc").
+		// SQL 
         Where("article_id = ?", article.ID).
         Find(&comments).Error; err != nil {
+		// Find & Frist 
         return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch comments"})
     }
 
