@@ -6,12 +6,12 @@ import (
 )
 
 
-// Get Comments
+// คือฟังก์ชันที่จะดึงข้อมูลคอมเมนต์ทั้งหมดจากฐานข้อมูล
 func GetComments(c *fiber.Ctx) error {
 	return service.HandleGetComments(c)
 }
 
-// Create Comment
+// คือฟังก์ชันที่จะสร้างคอมเมนต์ใหม่
 func CreateComment(c *fiber.Ctx) error {
 	return service.HandleCreateComment(c)
 }

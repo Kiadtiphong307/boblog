@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Get All Tags
+// คือฟังก์ชันที่จะดึงข้อมูลแท็กทั้งหมดจากฐานข้อมูล
 func GetTags(c *fiber.Ctx) error {
 	return service.HandleGetTags(c)
 }

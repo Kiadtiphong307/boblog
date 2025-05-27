@@ -1,66 +1,39 @@
 package middleware
 
 import (
-	"strings"
+	"os"
+	"fmt"
 
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWT Secret
-var jwtSecret = []byte("secret") 
-
-// Protected
 func Protected() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		// Get Authorization header
-		tokenStr := c.Get("Authorization")
-		if tokenStr == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Unauthorized: missing token",
-			})
-		}
+	return jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
+		ContextKey: "user", // เก็บ token ไว้ใน c.Locals("user")
+		ErrorHandler: jwtError,
+		SuccessHandler: func(c *fiber.Ctx) error {
+			userToken := c.Locals("user")
+			token, ok := userToken.(*jwt.Token)
+			if !ok {
+				return jwtError(c, fmt.Errorf("invalid token"))
+			}
 
-		// Check Bearer <token>
-		parts := strings.SplitN(tokenStr, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid token format",
-			})
-		}
-		tokenStr = parts[1]
+			claims := token.Claims.(jwt.MapClaims)
+			if idFloat, ok := claims["id"].(float64); ok {
+				c.Locals("userID", uint(idFloat)) // ✅ Set userID ที่เราจะใช้งานใน Controller
+			}
 
-		// Parse and validate JWT
-		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
-		})
-		if err != nil || !token.Valid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid or expired token",
-			})
-		}
+			return c.Next()
+		},
+	})
+}
 
-		// Convert claims
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok || claims["id"] == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid token claims",
-			})
-		}
-
-		// Convert userID from float64 to uint safely
-		userIDFloat, ok := claims["id"].(float64)
-		if !ok {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid user ID in token",
-			})
-		}
-		userID := uint(userIDFloat)
-
-		// Store userID in context
-		c.Locals("userID", userID)
-		c.Locals("user", token)
-
-		return c.Next()
+func jwtError(c *fiber.Ctx, err error) error {
+	if err.Error() == "Missing or malformed JWT" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
+	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 }

@@ -7,35 +7,37 @@ import (
 
 
 
-// Get all articles
+// คือฟังก์ชันที่จะดึงข้อมูลบทความทั้งหมดจากฐานข้อมูล
 func GetAllArticles(c *fiber.Ctx) error {
 	return service.HandleGetAllArticles(c)
 }
-// filter articles and tags
+// คือฟังก์ชันที่จะค้นหาบทความตามหมวดหมู่และแท็ก
 func SearchArticlesTags(c *fiber.Ctx) error {
 	return service.HandleSearchArticlesTags(c)
 }
 
-// Get article by slug
+// คือฟังก์ชันที่จะดึงข้อมูลบทความตาม slug
 func GetArticleBySlug(c *fiber.Ctx) error {
 	return service.HandleGetArticleBySlug(c)
 }
 
-// Get my articles
+// CRUD Write Article
+// คือฟังก์ชันที่จะดึงข้อมูลบทความของผู้ใช้งานปัจจุบัน 
 func GetMyArticles(c *fiber.Ctx) error {
 	return service.HandleGetMyArticles(c)
 }
 
+// คือฟังก์ชันที่จะสร้างบทความใหม่ จาก service/articles_service.go
 func CreateArticle(c *fiber.Ctx) error {
 	return service.HandleCreateArticle(c)
 }
 
-// UpdateArticle updates an existing article
+// คือฟังก์ชันที่จะแก้ไขบทความ จาก service/articles_service.go
 func UpdateArticle(c *fiber.Ctx) error {
 	return service.HandleUpdateArticle(c)
 }
 
-// DeleteArticle deletes an article by slug (only by the author)
+// คือฟังก์ชันที่จะลบบทความ
 func DeleteArticle(c *fiber.Ctx) error {
 	return service.HandleDeleteArticle(c)
 }

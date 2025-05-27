@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Get All Categories
+// คือฟังก์ชันที่จะดึงข้อมูลหมวดหมู่ทั้งหมดจากฐานข้อมูล
 func GetCategories(c *fiber.Ctx) error {
 	return service.HandleGetCategories(c)
 }
