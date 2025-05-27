@@ -14,6 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// คือฟังก์ชันที่จะตรวจสอบว่าอีเมลมีอยู่แล้วหรือไม่
 func IsEmailExists(email string) (bool, error) {
 	var user models.User
 	if err := database.DB.Where("email = ?", email).First(&user).Error; err == nil {
@@ -21,7 +22,7 @@ func IsEmailExists(email string) (bool, error) {
 	}
 	return false, nil
 }
-
+// คือฟังก์ชันที่จะตรวจสอบว่าชื่อผู้ใช้งานมีอยู่แล้วหรือไม่
 func IsUsernameExists(username string) (bool, error) {
 	var user models.User
 	if err := database.DB.Where("username = ?", username).First(&user).Error; err == nil {
@@ -30,6 +31,7 @@ func IsUsernameExists(username string) (bool, error) {
 	return false, nil
 }
 
+// คือฟังก์ชันที่จะดึงข้อมูลผู้ใช้งานจากฐานข้อมูล
 func GetUserByID(id uint) (*models.User, error) {
 	var user models.User
 	if err := database.DB.First(&user, id).Error; err != nil {
@@ -38,6 +40,7 @@ func GetUserByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
+// คือฟังก์ชันที่จะดึงข้อมูลผู้ใช้งานจาก JWT
 func ExtractUserIDFromJWT(c *fiber.Ctx) (uint, error) {
 	userToken := c.Locals("user")
 	token, ok := userToken.(*jwt.Token)
@@ -51,7 +54,7 @@ func ExtractUserIDFromJWT(c *fiber.Ctx) (uint, error) {
 	}
 	return uint(idFloat), nil
 }
-
+// คือฟังก์ชันที่จะอัปเดตรูปภาพผู้ใช้
 func HandleAvatarUpload(c *fiber.Ctx, userID uint) (*string, error) {
 	file, err := c.FormFile("avatar")
 	if err != nil || file == nil {
