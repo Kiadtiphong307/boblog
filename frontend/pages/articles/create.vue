@@ -1,82 +1,4 @@
-<script setup lang="ts">
-import { ref, watch } from "vue"
-import { useRouter } from "vue-router"
-
-const router = useRouter()
-
-const title = ref("")
-const slug = ref("")
-const content = ref("")
-const categoryName = ref("")
-const tags = ref("")
-
-const error = ref<Record<string, string>>({})
-const success = ref(false)
-
-// สร้าง slug อัตโนมัติจาก title
-const slugify = (text: string): string =>
-  text
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[^\p{L}\p{N}\s-]/gu, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-
-watch(title, (newTitle) => {
-  slug.value = slugify(newTitle)
-})
-
-const handleSubmit = async () => {
-  error.value = {}
-  success.value = false
-
-  const token = localStorage.getItem("token")
-  if (!token) {
-    error.value.general = "คุณต้องเข้าสู่ระบบก่อนสร้างบทความ"
-    return
-  }
-
-  try {
-    await $fetch("/api/articles", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: {
-        title: title.value,
-        slug: slug.value,
-        content: content.value,
-        category_name: categoryName.value,
-        tag_names: tags.value
-          ? tags.value.split(",").map((t) => t.trim()).filter(Boolean)
-          : [],
-      },
-    })
-
-    success.value = true
-    // เคลียร์ฟอร์มหลังสำเร็จ
-    title.value = ""
-    slug.value = ""
-    content.value = ""
-    categoryName.value = ""
-    tags.value = ""
-
-    setTimeout(() => router.push("/articles"), 1500)
-  } catch (e: any) {
-    // รองรับ errors แยกฟิลด์จาก backend
-    if (e?.data?.errors) {
-      error.value = e.data.errors
-    } else if (e?.data?.error) {
-      error.value.general = e.data.error
-    } else {
-      error.value.general = "❌ เกิดข้อผิดพลาดในการสร้างบทความ"
-    }
-  }
-}
-</script>
-
-<template>
+ <template>
   <div class="max-w-2xl mx-auto py-12 px-6">
     <h1 class="text-3xl font-bold text-gray-800 mb-8">📝 สร้างบทความใหม่</h1>
 
@@ -154,3 +76,18 @@ const handleSubmit = async () => {
     </form>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useProductForm } from '@/composables/product/useProduct'
+
+const {
+  title,
+  slug,
+  content,
+  categoryName,
+  tags,
+  error,
+  success,
+  handleSubmit,
+} = useProductForm()
+</script>

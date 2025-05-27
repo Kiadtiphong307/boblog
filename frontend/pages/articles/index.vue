@@ -1,62 +1,14 @@
-<script setup>
-import { ref, onMounted, watch } from "vue";
+<script setup lang="ts">
+import { useProductList } from '@/composables/product/useProduct'
 
-const articles = ref([]);
-const categories = ref([]);
-const selectedCategory = ref("");
-const searchTerm = ref("");
-const loading = ref(true);
-
-// Fetch Categories
-const fetchCategories = async () => {
-  try {
-    const res = await $fetch("/api/categories");
-    categories.value = res.data || [];
-  } catch (err) {
-    console.error("❌ Failed to load categories:", err);
-  }
-};
-
-// โหลดบทความทั้งหมด (ไม่ใช้ pagination)
-const fetchArticles = async () => {
-  loading.value = true;
-  const query = new URLSearchParams();
-
-  if (searchTerm.value.trim()) {
-    query.append("search", searchTerm.value.trim());
-  }
-
-  if (selectedCategory.value) {
-    query.append("category_id", selectedCategory.value);
-  }
-
-  try {
-    const res = await $fetch(`/api/articles?${query.toString()}`);
-    articles.value = res.data || [];
-  } catch (err) {
-    console.error("❌ Error loading articles:", err);
-    articles.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Format Date
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-onMounted(() => {
-  fetchCategories();
-  fetchArticles();
-});
-
-watch([searchTerm, selectedCategory], fetchArticles);
+const {
+  articles,
+  categories,
+  selectedCategory,
+  searchTerm,
+  loading,
+  formatDate,
+} = useProductList()
 </script>
 
 <template>
@@ -94,7 +46,7 @@ watch([searchTerm, selectedCategory], fetchArticles);
           <!-- Category -->
           <div class="mb-2">
             <span class="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
-              {{ article.category?.name || "ไม่มีหมวดหมู่" }}
+              {{ article.category?.name || 'ไม่มีหมวดหมู่' }}
             </span>
           </div>
 
@@ -105,7 +57,7 @@ watch([searchTerm, selectedCategory], fetchArticles);
 
           <!-- Date -->
           <p class="text-xs text-gray-400 mb-2">
-            {{ formatDate(article.created_at || article.createdAt) }}
+            {{ formatDate(article.created_at || article.createdAt || '') }}
           </p>
 
           <!-- Summary -->
@@ -115,7 +67,7 @@ watch([searchTerm, selectedCategory], fetchArticles);
 
           <!-- Author -->
           <p class="text-sm text-gray-500 mb-2">
-            ผู้เขียน: <span class="font-medium">{{ article.author?.username || "ไม่ทราบชื่อ" }}</span>
+            ผู้เขียน: <span class="font-medium">{{ article.author?.username || 'ไม่ทราบชื่อ' }}</span>
           </p>
 
           <!-- Tags -->
