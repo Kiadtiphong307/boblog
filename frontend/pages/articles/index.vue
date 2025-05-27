@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useProductList } from '@/composables/product/useProduct'
+import { useProductList } from '~/composables/articles/useArticles'
 
 const {
   articles,

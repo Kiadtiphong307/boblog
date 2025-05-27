@@ -1,4 +1,4 @@
-// 📁 frontend/composables/product/useProduct.ts
+
 import { ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { Article, Category, Comment } from '@/types/article'

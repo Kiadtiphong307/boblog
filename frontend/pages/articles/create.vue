@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProductForm } from '@/composables/product/useProduct'
+import { useProductForm } from '~/composables/articles/useArticles'
 
 const {
   title,

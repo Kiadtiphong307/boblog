@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProductDetail } from '@/composables/product/useProduct'
+import { useProductDetail } from '~/composables/articles/useArticles'
 
 const {
   article,
