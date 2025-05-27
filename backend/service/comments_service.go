@@ -1,8 +1,8 @@
 package controller
 
 import (
-    "blog-db/database"
-	"blog-db/models"
+    "backend/database"
+	"backend/models"
 	"time"
 	"github.com/gofiber/fiber/v2"
     "log"
@@ -12,7 +12,7 @@ import (
 
 
 // Get Comments
-func GetComments(c *fiber.Ctx) error {
+func HandleGetComments(c *fiber.Ctx) error {
 	//  Params & Query
     slugEncoded := c.Params("slug")
 	// ทำงานยังไง
@@ -41,9 +41,8 @@ func GetComments(c *fiber.Ctx) error {
     return c.JSON(comments)
 }
 
-
 // Create Comment
-func CreateComment(c *fiber.Ctx) error {
+func HandleCreateComment(c *fiber.Ctx) error {
 	// ✅ รับ slug ที่ encode จาก URL
 	slugEncoded := c.Params("slug")
 

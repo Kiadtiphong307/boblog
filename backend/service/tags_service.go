@@ -1,15 +1,15 @@
 package controller
 
 import (
-	"blog-db/database"
-	"blog-db/models"
-	"blog-db/utils"
+	"backend/database"
+	"backend/models"
+	"backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
 
 // Get All Tags
-func GetTags(c *fiber.Ctx) error {
+func HandleGetTags(c *fiber.Ctx) error {
 	var tags []models.Tags
 
 	if result := database.DB.Find(&tags); result.Error != nil {

@@ -1,11 +1,12 @@
 package main
 
 import (
-	"blog-db/database"
-	"blog-db/middleware"
-	"blog-db/models"
-	"blog-db/routes"
-	"blog-db/seed"
+	"backend/database"
+	"backend/middleware"
+	"backend/models"
+	"backend/routes"
+	"backend/seed"
+	
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,17 +26,16 @@ func main() {
 		&models.Tags{},
 	)
 
-	routes.RegisterAuthRoutes(app) // For registering and logging in
-	routes.SearchedCategoryRoutes(app) // For searching categories
-	routes.RegisterArticleRoutes(app) // For creating, updating, and deleting articles
-	routes.GetTagsAll(app) // For getting tag data
-	routes.RegisterCommentRoutes(app) // For creating and getting comments
+	routes.RegisterAuthRoutes(app)
+	routes.SearchedCategoryRoutes(app)
+	routes.RegisterArticleRoutes(app) 
+	routes.GetTagsAll(app) 
+	routes.RegisterCommentRoutes(app) 
 
 	
 	protected := app.Group("/", middleware.Protected())
 	routes.RegisterUserRoutes(protected) 
 	
-	// Simulate data for testing
 	seed.SeedCategories()
 	seed.SeedTags()  
 	seed.SeedUserAndArticles()

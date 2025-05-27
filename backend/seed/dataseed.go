@@ -1,8 +1,8 @@
 package seed
 
 import (
-	"blog-db/database"
-	"blog-db/models"
+	"backend/database"
+	"backend/models"
 	"log"
 	"strings"
 

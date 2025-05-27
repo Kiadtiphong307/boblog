@@ -1,67 +1,37 @@
 package controller
 
 import (
-	"blog-db/database"
-	"blog-db/models"
-	"blog-db/utils"
-	"log"
-	"time"
-	"strings"
-	"fmt"
-	"path/filepath"
-	"os"
+	"backend/database"
+	"backend/models"
+	"backend/utils"
+	"backend/validation"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
-var validate = validator.New()
-
-var jwtSecret = []byte("secret") 
-
 // Register
-func Register(c *fiber.Ctx) error {
-	var input struct {
-		Username        string `json:"username" validate:"required,min=3"`
-		Email           string `json:"email" validate:"required,email"`
-		Password        string `json:"password" validate:"required,min=6"`
-		ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
-		FirstName       string `json:"first_name" validate:"required"`
-		LastName        string `json:"last_name" validate:"required"`
-		Nickname        string `json:"nickname" validate:"required"`
-	}
+func HandleRegister(c *fiber.Ctx) error {
+	var input validation.RegisterInput
 
-	// check body is valid
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "❌ ไม่สามารถอ่านข้อมูลจากแบบฟอร์มได้",
 		})
 	}
 
-	// check body is valid
-	if err := validate.Struct(input); err != nil {
-		errors := make(map[string]string)
-		for _, e := range err.(validator.ValidationErrors) {
-			field := strings.ToLower(e.Field())
-			switch e.Tag() {
-			case "required":
-				errors[field] = "จำเป็นต้องกรอก"
-			case "email":
-				errors[field] = "อีเมลไม่ถูกต้อง"
-			case "min":
-				errors[field] = fmt.Sprintf("ต้องมีความยาวอย่างน้อย %s ตัวอักษร", e.Param())
-			default:
-				errors[field] = "ข้อมูลไม่ถูกต้อง"
-			}
-		}
-		return c.Status(400).JSON(fiber.Map{
-			"errors": errors,
-		})
+	if errs := validation.ValidateStructRegister(input); errs != nil {
+		return c.Status(400).JSON(fiber.Map{"errors": errs})
 	}
 
-	// check password is valid
 	if input.Password != input.ConfirmPassword {
 		return c.Status(400).JSON(fiber.Map{
 			"errors": map[string]string{
@@ -70,7 +40,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// check email is exist
+	// Check email exists
 	var existing models.User
 	if err := database.DB.Where("email = ?", input.Email).First(&existing).Error; err == nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -80,7 +50,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// check username is exist
+	// Check username exists
 	var existingUsername models.User
 	if err := database.DB.Where("username = ?", input.Username).First(&existingUsername).Error; err == nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -90,7 +60,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// hash password
+	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -98,7 +68,7 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// create user
+	// Create user
 	user := models.User{
 		Username:     input.Username,
 		Email:        input.Email,
@@ -114,20 +84,20 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	// don't return password
 	user.PasswordHash = ""
-
 	return c.Status(201).JSON(utils.SuccessResponse(user, "✅ สมัครสมาชิกสำเร็จ"))
 }
 
 // Login
-func Login(c *fiber.Ctx) error {
-	var input struct {
-		EmailOrUsername string `json:"email"`
-		Password        string `json:"password"`
-	}
+func HandleLogin(c *fiber.Ctx) error {
+	var input validation.LoginInput
+
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+	}
+
+	if errs := validation.ValidateStructLogin(input); errs != nil {
+		return c.Status(400).JSON(fiber.Map{"errors": errs})
 	}
 
 	var user models.User
@@ -143,14 +113,13 @@ func Login(c *fiber.Ctx) error {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid credentials"))
 	}
 
-	// Create JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.ID,
 		"email": user.Email,
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		log.Println("JWT error:", err)
 		return c.SendStatus(500)
@@ -162,7 +131,7 @@ func Login(c *fiber.Ctx) error {
 }
 
 // get current user
-func GetCurrentUser(c *fiber.Ctx) error {
+func HandleProfile(c *fiber.Ctx) error {
 	// check if token is sent
 	userToken := c.Locals("user")
 	if userToken == nil {
@@ -192,7 +161,7 @@ func GetCurrentUser(c *fiber.Ctx) error {
 }
 
 // UpdateCurrentUser อัปเดตข้อมูลผู้ใช้ที่เข้าสู่ระบบ
-func UpdateCurrentUser(c *fiber.Ctx) error {
+func HandleUpdateProfile(c *fiber.Ctx) error {
 	userIDAny := c.Locals("userID")
 	userID, ok := userIDAny.(uint)
 	if !ok {
@@ -287,12 +256,3 @@ func UpdateCurrentUser(c *fiber.Ctx) error {
 	user.PasswordHash = ""
 	return c.JSON(utils.SuccessResponse(user, "Profile updated successfully"))
 }
-
-
-
-	
-
-
-
-
-	

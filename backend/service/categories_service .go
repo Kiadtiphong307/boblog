@@ -1,15 +1,15 @@
-package controller
+package controller 
 
 import (
-	"blog-db/database"
-	"blog-db/models"
-	"blog-db/utils"
+	"backend/database"
+	"backend/models"
+	"backend/utils"
 	"github.com/gofiber/fiber/v2"
 	"log"
 )
 
 // Get All Categories
-func GetCategories(c *fiber.Ctx) error {
+func HandleGetCategories(c *fiber.Ctx) error {
 	var categories []models.Category
 
 	if result := database.DB.Find(&categories); result.Error != nil {

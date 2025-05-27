@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"blog-db/controller"
-	"blog-db/middleware"
+	"backend/controller"
+	"backend/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,8 +18,8 @@ func RegisterAuthRoutes(app *fiber.App) {
 func RegisterUserRoutes(r fiber.Router) {
 	users := r.Group("/user", middleware.Protected())
 
-	users.Get("/", controller.GetCurrentUser) // ดูข้อมูลผู้ใช้งานปัจจุบัน
-	users.Put("/", controller.UpdateCurrentUser) // แก้ไขข้อมูลผู้ใช้งานปัจจุบัน
+	users.Get("/", controller.Profile) // ดูข้อมูลผู้ใช้งานปัจจุบัน
+	users.Put("/", controller.UpdateProfile) // แก้ไขข้อมูลผู้ใช้งานปัจจุบัน
 
 }
 
