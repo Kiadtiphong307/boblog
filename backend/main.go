@@ -14,7 +14,7 @@ import (
 func main() {
 	app := fiber.New()
 
-	// For sending image data
+	// คือการสร้าง folder สำหรับส่งข้อมูลรูปภาพ
 	app.Static("/uploads", "/app/uploads")
 
 	database.Init()
@@ -26,16 +26,17 @@ func main() {
 		&models.Tags{},
 	)
 
-	routes.RegisterAuthRoutes(app)
-	routes.SearchedCategoryRoutes(app)
-	routes.RegisterArticleRoutes(app) 
-	routes.GetTagsAll(app) 
-	routes.RegisterCommentRoutes(app) 
+	routes.AuthRoutes(app)  // ลงทะเบียนและเข้าสู่ระบบ
+	routes.CategoryRoutes(app) // ดูหมวดหมู่บทความ
+	routes.ArticleRoutes(app)  // ดูบทความ
+	routes.GetTagsAll(app)  // ดูแท็ก
+	routes.CommentRoutes(app)  // ดูคอมเมนต์
 
 	
 	protected := app.Group("/", middleware.Protected())
-	routes.RegisterUserRoutes(protected) 
+	routes.UserRoutes(protected)  // ดูข้อมูลผู้ใช้
 	
+	// Database Seed
 	seed.SeedCategories()
 	seed.SeedTags()  
 	seed.SeedUserAndArticles()
