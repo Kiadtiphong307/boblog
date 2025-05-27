@@ -1,4 +1,4 @@
-package controller
+package service
 
 import (
 	"backend/database"
@@ -17,7 +17,12 @@ import (
 // คือฟังก์ชันที่จะดึงข้อมูลบทความทั้งหมดจากฐานข้อมูล
 func HandleGetAllArticles(c *fiber.Ctx) error {
 	var articles []models.Article
-	err := database.DB.Preload("Author").Preload("Category").Preload("Tags").Preload("Comments").Find(&articles).Error
+	err := database.DB.
+	Preload("Author").
+	Preload("Category").
+	Preload("Tags").
+	Preload("Comments").
+	Find(&articles).Error
 	if err != nil {
 		log.Println("❌ Error getting all articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to get articles"))
@@ -59,7 +64,11 @@ func HandleGetArticleBySlug(c *fiber.Ctx) error {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid slug format"))
 	}
 	var article models.Article
-	err = database.DB.Preload("Author").Preload("Category").Preload("Tags").Preload("Comments").First(&article, "slug = ?", slug).Error
+	err = database.DB.Preload("Author").
+	Preload("Category").
+	Preload("Tags").
+	Preload("Comments").
+	First(&article, "slug = ?", slug).Error
 	if err != nil {
 		return c.Status(404).JSON(utils.ErrorResponse("Article not found"))
 	}

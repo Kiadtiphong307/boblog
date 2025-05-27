@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
@@ -11,8 +11,8 @@ import (
 
 func Protected() fiber.Handler {
 	return jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
-		ContextKey: "user", // เก็บ token ไว้ใน c.Locals("user")
+		SigningKey:   jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
+		ContextKey:   "user", // เก็บ token ไว้ใน c.Locals("user")
 		ErrorHandler: jwtError,
 		SuccessHandler: func(c *fiber.Ctx) error {
 			userToken := c.Locals("user")

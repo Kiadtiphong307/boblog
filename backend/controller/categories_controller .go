@@ -1,7 +1,7 @@
 package controller 
 
 import (
-	service "backend/service"
+	"backend/service"
 	"github.com/gofiber/fiber/v2"
 )
 
