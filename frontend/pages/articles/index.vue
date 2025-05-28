@@ -1,20 +1,3 @@
-<script setup lang="ts">
-import { useProductList } from '~/composables/articles/useArticles'
-import Card from '~/components/Card/Card.vue'
-import Filter from '~/components/Searching/Filter.vue'
-
-const {
-  articles,
-  categories,
-  selectedCategory,
-  searchTerm,
-  loading,
-  formatDate,
-  updateSearchTerm,
-  updateSelectedCategory,
-} = useProductList()
-</script>
-
 <template>
   <div class="max-w-6xl mx-auto py-10 px-4">
     <h1 class="text-2xl font-bold mb-6">📚 บทความทั้งหมด</h1>
@@ -44,3 +27,20 @@ const {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useProductList } from '~/composables/articles/useArticles'
+import Card from '~/components/Card/Card.vue'
+import Filter from '~/components/Searching/Filter.vue'
+
+const {
+  articles,
+  categories,
+  selectedCategory,
+  searchTerm,
+  loading,
+  formatDate,
+  updateSearchTerm,
+  updateSelectedCategory,
+} = useProductList()
+</script>

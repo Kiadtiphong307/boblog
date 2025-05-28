@@ -1,14 +1,3 @@
-<script setup lang="ts">
-import type { Article } from '~/types/article'
-
-interface Props {
-  article: Article
-  formatDate: (date: string) => string
-}
-
-defineProps<Props>()
-</script>
-
 <template>
   <div class="bg-white rounded-xl shadow p-6 flex flex-col justify-between">
     <!-- Category -->
@@ -52,3 +41,14 @@ defineProps<Props>()
     </NuxtLink>
   </div>
 </template>
+
+<script setup lang="ts">
+import type { Article } from '~/types/article'
+
+interface Props {
+  article: Article
+  formatDate: (date: string) => string
+}
+
+defineProps<Props>()
+</script>
