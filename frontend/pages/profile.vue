@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { useProfile } from '@/composables/useProfile'
-import { ProfileText } from '@/constants/Profile/Profile'
+import { ProfileText } from '~/constants/Profile'
 import { PlaceholdersImage } from '@/constants/Placeholders'
 
 const {

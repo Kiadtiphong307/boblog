@@ -5,11 +5,14 @@ export const PlaceholdersText = {
   tag_articel_placeholder : "คั่นด้วย , เช่น go, fiber",
 }
 
-
-
-
-
 export const PlaceholdersImage = {
   imageNote: 'ขนาดไม่เกิน 10MB',
   noImage: 'No Image',
 }
+
+export const PlaceholdersLogin = {
+  emailOrUsername: 'อีเมลหรือชื่อผู้ใช้งาน',
+  password: 'รหัสผ่าน',
+}
+
+

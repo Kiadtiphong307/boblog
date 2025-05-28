@@ -6,7 +6,7 @@
         </div>
         <NuxtLink to="/articles/create" class="bg-white text-blue-500 font-semibold px-8 py-3 rounded hover:bg-blue-100 shadow-lg 
           transition hover:scale-110 hover:ease-in-out hover:shadow-xl hover:duration-700">
-          {{ ArticelsText.create_articel }}
+          {{ Menu.title_create_new_articel }}
         </NuxtLink>
       </div>
     </div>
@@ -14,6 +14,6 @@
   
 <script setup>
 import { HeroSection } from '~/constants/HeroSection';
-import { ArticelsText } from '~/constants/Articels/articelsText';
+import { Menu } from '~/constants/Menu';
 </script>
 

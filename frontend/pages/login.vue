@@ -5,9 +5,9 @@
 
       <!-- Form -->
       <form @submit.prevent="login" class="space-y-4">
-        <input v-model="emailOrUsername" type="text" :placeholder="formPlaceholders.emailOrUsername" required
+        <input v-model="emailOrUsername" type="text" :placeholder="PlaceholdersLogin.emailOrUsername" required
           class="input input-bordered w-full" />
-        <input v-model="password" type="password" :placeholder="formPlaceholders.password" required
+        <input v-model="password" type="password" :placeholder="PlaceholdersLogin.password" required
           class="input input-bordered w-full" />
         <button type="submit" class="btn btn-primary w-full">
           เข้าสู่ระบบ
@@ -32,7 +32,7 @@
 definePageMeta({ layout: false })
 
 import { useLogin } from '@/composables/useLogin'
-import { formPlaceholders } from '~/constants/Placeholders'
+import { PlaceholdersLogin } from '~/constants/Placeholders'
 
 const { emailOrUsername, password, error, login } = useLogin()
 </script>

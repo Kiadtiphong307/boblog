@@ -1,6 +1,6 @@
  <template>
   <div class="max-w-2xl mx-auto py-12 px-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">{{ ArticelsText.title_create_new }}</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">📣{{ ArticelsText.title_create_new }}</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-6 bg-white p-8 rounded-2xl shadow-xl">
       <!-- ชื่อบทความ -->
@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { useProductForm } from '~/composables/articles/useArticles'
-import { ArticelsText } from '~/constants/Articels/articelsText';
+import { ArticelsText } from '~/constants/Articel';
 import { PlaceholdersText } from '~/constants/Placeholders';
 
 const {
