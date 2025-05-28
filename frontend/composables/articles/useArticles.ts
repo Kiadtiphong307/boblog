@@ -4,34 +4,60 @@ import type { Article, Category, Comment } from '~/types/article'
 
 // 📦 Read: ดึงรายการบทความและหมวดหมู่
 export function useProductList() {
+  // raw data
   const articles = ref<Article[]>([])
   const categories = ref<Category[]>([])
+  // filters
   const selectedCategory = ref<string | number>('')
   const searchTerm = ref('')
-  const localSearchTerm = ref('') // For immediate UI updates
+  const localSearchTerm = ref('') // for immediate v-model
   const loading = ref(true)
-  
   let debounceTimer: NodeJS.Timeout | null = null
 
-  // ดึงหมวดหมู่ทั้งหมด
+  // pagination state
+  const currentPage = ref(1)
+  const perPage = ref(4) // จำนวนบทความต่อหน้า
+  const totalPages = computed(() =>
+    Math.ceil(articles.value.length / perPage.value) || 1
+  )
+  const paginatedArticles = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value
+    return articles.value.slice(start, start + perPage.value)
+  })
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages.value) {
+      currentPage.value = page
+    }
+  }
+  const nextPage = () => {
+    if (currentPage.value < totalPages.value) currentPage.value++
+  }
+  const prevPage = () => {
+    if (currentPage.value > 1) currentPage.value--
+  }
+
+  // fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await $fetch<{data: Category[]}>('/api/categories')
+      const res = await $fetch<{ data: Category[] }>('/api/categories')
       categories.value = res.data || []
     } catch (err) {
       console.error('❌ Failed to load categories:', err)
     }
   }
 
-  // ดึงบทความทั้งหมดโดยใช้ filter จาก searchTerm และ selectedCategory
+  // fetch articles (reset to page 1 เมื่อ filter/search เปลี่ยน)
   const fetchArticles = async () => {
     loading.value = true
+    currentPage.value = 1
+
     const query = new URLSearchParams()
     if (searchTerm.value.trim()) query.append('search', searchTerm.value.trim())
     if (selectedCategory.value) query.append('category_id', selectedCategory.value.toString())
 
     try {
-      const res = await $fetch<{data: Article[]}>(`/api/articles?${query.toString()}`)
+      const res = await $fetch<{ data: Article[] }>(`/api/articles?${query.toString()}`)
       articles.value = res.data || []
     } catch (err) {
       console.error('❌ Error loading articles:', err)
@@ -41,23 +67,17 @@ export function useProductList() {
     }
   }
 
-  // Debounced search function
+  // debounced search term setter
   const debouncedSearch = (value: string) => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-    }
-    
+    if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => {
       searchTerm.value = value
-    }, 500) // Wait 500ms after user stops typing
+    }, 500)
   }
-
-  // Update search functions
   const updateSearchTerm = (value: string) => {
     localSearchTerm.value = value
     debouncedSearch(value)
   }
-
   const updateSelectedCategory = (value: string | number) => {
     selectedCategory.value = value
   }
@@ -71,31 +91,32 @@ export function useProductList() {
     })
   }
 
-  // Cleanup on unmount
   onUnmounted(() => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-    }
+    if (debounceTimer) clearTimeout(debounceTimer)
   })
-
   onMounted(() => {
     fetchCategories()
     fetchArticles()
   })
-
-  // Watch for actual searchTerm changes (after debounce) and selectedCategory changes
   watch([searchTerm, selectedCategory], fetchArticles)
 
   return {
-    articles,
+    // เปลี่ยนให้ articles ชี้ไปที่ paginatedArticles
+    articles: paginatedArticles,
     categories,
     selectedCategory,
-    searchTerm: localSearchTerm, // Return localSearchTerm for immediate UI updates
+    searchTerm: localSearchTerm,
     loading,
     fetchArticles,
     formatDate,
     updateSearchTerm,
     updateSelectedCategory,
+    // exports สำหรับ pagination
+    currentPage,
+    totalPages,
+    goToPage,
+    nextPage,
+    prevPage,
   }
 }
 
