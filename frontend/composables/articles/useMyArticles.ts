@@ -1,6 +1,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Article } from '~/types/article'
+import type { Article } from '@/types/article'
 
 export function useMyArticles() {
   const articles = ref<Article[]>([])
