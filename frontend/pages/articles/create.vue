@@ -1,29 +1,26 @@
  <template>
   <div class="max-w-2xl mx-auto py-12 px-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">📝 สร้างบทความใหม่</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">{{ ArticelsText.title_create_new }}</h1>
 
     <form @submit.prevent="handleSubmit" class="space-y-6 bg-white p-8 rounded-2xl shadow-xl">
       <!-- ชื่อบทความ -->
       <div>
-        <label class="block text-gray-700 font-medium mb-1">ชื่อบทความ</label>
+        <label class="block text-gray-700 font-medium mb-1">{{ ArticelsText.title_articel }}</label>
         <input
           v-model="title"
           type="text"
-          placeholder="ชื่อบทความ"
+          :placeholder="PlaceholdersText.title_articel_placeholder"
           class="w-full border border-gray-300 rounded-xl p-3 focus:ring focus:ring-blue-200"
           required
         />
-        <p class="text-sm text-gray-500 mt-1">🔗 Slug ที่สร้าง: <span class="font-mono">{{ slug }}</span></p>
-        <p v-if="error.title" class="text-sm text-red-500 mt-1">{{ error.title }}</p>
-        <p v-if="error.slug" class="text-sm text-red-500 mt-1">{{ error.slug }}</p>
       </div>
 
       <!-- เนื้อหา -->
       <div>
-        <label class="block text-gray-700 font-medium mb-1">เนื้อหา</label>
+        <label class="block text-gray-700 font-medium mb-1">{{ ArticelsText.content_articel }}</label>
         <textarea
           v-model="content"
-          placeholder="พิมพ์เนื้อหา..."
+          :placeholder="PlaceholdersText.content_articel_placeholder"
           rows="8"
           class="w-full border border-gray-300 rounded-xl p-3 focus:ring focus:ring-blue-200"
           required
@@ -33,11 +30,11 @@
 
       <!-- หมวดหมู่ -->
       <div>
-        <label class="block text-gray-700 font-medium mb-1">หมวดหมู่</label>
+        <label class="block text-gray-700 font-medium mb-1">{{ ArticelsText.category_articel }}</label>
         <input
           v-model="categoryName"
           type="text"
-          placeholder="เช่น ข่าว, บทความ"
+          :placeholder="PlaceholdersText.category_articel_placeholder"
           class="w-full border border-gray-300 rounded-xl p-3 focus:ring focus:ring-blue-200"
           required
         />
@@ -46,11 +43,11 @@
 
       <!-- แท็ก -->
       <div>
-        <label class="block text-gray-700 font-medium mb-1">แท็ก</label>
+        <label class="block text-gray-700 font-medium mb-1">{{ ArticelsText.tag_articel }}</label>
         <input
           v-model="tags"
           type="text"
-          placeholder="คั่นด้วย , เช่น go, fiber"
+          :placeholder="PlaceholdersText.tag_articel_placeholder"
           class="w-full border border-gray-300 rounded-xl p-3 focus:ring focus:ring-blue-200"
         />
         <p v-if="error.tag_names" class="text-sm text-red-500 mt-1">{{ error.tag_names }}</p>
@@ -62,7 +59,7 @@
           type="submit"
           class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
         >
-          ➕ สร้างบทความ
+          {{ ArticelsText.create_articel }}
         </button>
       </div>
 
@@ -79,10 +76,11 @@
 
 <script setup lang="ts">
 import { useProductForm } from '~/composables/articles/useArticles'
+import { ArticelsText } from '~/constants/Articels/articelsText';
+import { PlaceholdersText } from '~/constants/Placeholders';
 
 const {
   title,
-  slug,
   content,
   categoryName,
   tags,

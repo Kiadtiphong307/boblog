@@ -1,9 +1,9 @@
 <template>
   <nav class="flex items-center justify-between px-6 md:px-24 py-6 bg-white shadow-md border-b border-blue-200">
     <div class="flex items-center space-x-6">
-      <NuxtLink to="/" class="text-blue-500 font-bold text-3xl">BOBLOG</NuxtLink>
-      <NuxtLink to="/articles/create" class="flex items-center text-lg text-black">✏️ เขียนบทความ</NuxtLink>
-      <NuxtLink to="/articles" class="flex items-center text-lg text-black">🔍 ค้นหา</NuxtLink>
+      <NuxtLink to="/" class="text-blue-500 font-bold text-3xl">{{ HeroSection.title }}</NuxtLink>
+      <NuxtLink to="/articles/create" class="flex items-center text-lg text-black">{{ ArticelsText.create_articel }}</NuxtLink>
+      <NuxtLink to="/articles" class="flex items-center text-lg text-black">{{ ArticelsText.seach_articel }}</NuxtLink>
     </div>
 
     <div class="relative">
@@ -47,6 +47,8 @@
 
 <script setup lang="ts">
 import { useAuthInfo } from '@/composables/useAuthInfo'
+import { HeroSection } from '~/constants/HeroSection'
+import { ArticelsText } from '~/constants/Articels/articelsText'
 const { nickname, imageUrl, showDropdown, logout } = useAuthInfo()
 </script>
 

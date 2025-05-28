@@ -1,6 +1,5 @@
 import { ref, onMounted } from 'vue'
-import { formPlaceholders } from '@/constants/formPlaceholders'
-
+import { PlaceholdersImage } from '~/constants/Placeholders'
 interface UserProfile {
   first_name: string
   last_name: string
@@ -49,7 +48,7 @@ export const useProfile = () => {
     if (!file) return
 
     if (file.size > 10 * 1024 * 1024) {
-      error.value = formPlaceholders.imageNote
+      error.value = PlaceholdersImage.imageNote
       selectedFile.value = null
       previewImage.value = user.value?.image || null
       return

@@ -32,7 +32,7 @@
 definePageMeta({ layout: false })
 
 import { useLogin } from '@/composables/useLogin'
-import { formPlaceholders } from '@/constants/formPlaceholders'
+import { formPlaceholders } from '~/constants/Placeholders'
 
 const { emailOrUsername, password, error, login } = useLogin()
 </script>

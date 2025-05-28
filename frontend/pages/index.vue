@@ -1,5 +1,6 @@
 <script setup>
-import Section from '@/components/section.vue'
+import Section from '~/components/HeroSection/Section.vue'
+
 
 </script>
 
@@ -7,5 +8,6 @@ import Section from '@/components/section.vue'
   <div>
     <Section />
   </div>
+
 
 </template>

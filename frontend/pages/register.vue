@@ -67,7 +67,7 @@
 definePageMeta({ layout: false })
 
 import { useRegister } from '@/composables/useRegister'
-import { formPlaceholders } from '@/constants/formPlaceholders'
+import { formPlaceholders } from '~/constants/Placeholders'
 
 const { form, error, success, register } = useRegister()
 </script>
