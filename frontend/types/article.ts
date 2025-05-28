@@ -1,4 +1,4 @@
-// 📁 types/article.ts
+
 export interface Article {
     id: number
     title: string

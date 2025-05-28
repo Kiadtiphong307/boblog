@@ -1,15 +1,17 @@
-
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import type { Article, Category, Comment } from '@/types/article'
+import type { Article, Category, Comment } from '~/types/article'
 
 // 📦 Read: ดึงรายการบทความและหมวดหมู่
 export function useProductList() {
   const articles = ref<Article[]>([])
   const categories = ref<Category[]>([])
-  const selectedCategory = ref('')
+  const selectedCategory = ref<string | number>('')
   const searchTerm = ref('')
+  const localSearchTerm = ref('') // For immediate UI updates
   const loading = ref(true)
+  
+  let debounceTimer: NodeJS.Timeout | null = null
 
   // ดึงหมวดหมู่ทั้งหมด
   const fetchCategories = async () => {
@@ -26,7 +28,7 @@ export function useProductList() {
     loading.value = true
     const query = new URLSearchParams()
     if (searchTerm.value.trim()) query.append('search', searchTerm.value.trim())
-    if (selectedCategory.value) query.append('category_id', selectedCategory.value)
+    if (selectedCategory.value) query.append('category_id', selectedCategory.value.toString())
 
     try {
       const res = await $fetch<{data: Article[]}>(`/api/articles?${query.toString()}`)
@@ -39,6 +41,27 @@ export function useProductList() {
     }
   }
 
+  // Debounced search function
+  const debouncedSearch = (value: string) => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+    }
+    
+    debounceTimer = setTimeout(() => {
+      searchTerm.value = value
+    }, 500) // Wait 500ms after user stops typing
+  }
+
+  // Update search functions
+  const updateSearchTerm = (value: string) => {
+    localSearchTerm.value = value
+    debouncedSearch(value)
+  }
+
+  const updateSelectedCategory = (value: string | number) => {
+    selectedCategory.value = value
+  }
+
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('th-TH', {
@@ -48,21 +71,31 @@ export function useProductList() {
     })
   }
 
+  // Cleanup on unmount
+  onUnmounted(() => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+    }
+  })
+
   onMounted(() => {
     fetchCategories()
     fetchArticles()
   })
 
+  // Watch for actual searchTerm changes (after debounce) and selectedCategory changes
   watch([searchTerm, selectedCategory], fetchArticles)
 
   return {
     articles,
     categories,
     selectedCategory,
-    searchTerm,
+    searchTerm: localSearchTerm, // Return localSearchTerm for immediate UI updates
     loading,
     fetchArticles,
     formatDate,
+    updateSearchTerm,
+    updateSelectedCategory,
   }
 }
 
