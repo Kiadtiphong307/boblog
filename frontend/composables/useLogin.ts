@@ -29,7 +29,6 @@ export const useLogin = () => {
         // ✅ เก็บข้อมูล user (จุดสำคัญที่ขาดไป!)
         if (json.data.user) {
           localStorage.setItem('user', JSON.stringify(json.data.user))
-          console.log('💾 User data saved:', json.data.user)
         }
         
         router.push('/')

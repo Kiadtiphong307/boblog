@@ -37,7 +37,6 @@ export function useAuthInfo() {
           image: json.data.image
         }
         localStorage.setItem('user', JSON.stringify(userData))
-        console.log('💾 User data updated:', userData)
       }
     } catch (err) {
       console.error('ไม่สามารถโหลดข้อมูลผู้ใช้:', err)

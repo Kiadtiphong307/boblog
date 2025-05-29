@@ -16,7 +16,7 @@ export function useComment() {
     const fetchArticle = async () => {
       const token = localStorage.getItem('token')
       try {
-        const res = await $fetch<{data: Article}>(`/api/articles/${route.params.slug}`, {
+        const res = await $fetch<{data: Article}>(`/api/articles/${route.params.slug}`, { 
           headers: { Authorization: `Bearer ${token}` },
         })
         article.value = (res as any).data
@@ -184,10 +184,6 @@ const isCommentOwner = (comment: Comment) => {
     
     // เปรียบเทียบ username (จาก debug ข้างบนเห็นว่ามี username)
     const isOwner = currentUser.username === comment.user?.username
-    
-    console.log('Current Username:', currentUser.username)
-    console.log('Comment Username:', comment.user?.username) 
-    console.log('Is Owner?', isOwner)
     
     return isOwner
   } catch {
