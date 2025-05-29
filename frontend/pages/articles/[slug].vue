@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProductDetail } from '~/composables/articles/useArticles'
+import { useComment } from '~/composables/useComment'
 
 const {
   article,
@@ -65,5 +65,5 @@ const {
   fetchComments,
   submitComment,
   formatDate,
-} = useProductDetail()
+} = useComment()
 </script>

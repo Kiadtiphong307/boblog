@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProductList } from '~/composables/articles/useArticles'
+import { useArticles } from '~/composables/articles/useArticles'
 import Card from '~/components/Card/Card.vue'
 import Filter from '~/components/Searching/Filter.vue'
 
@@ -76,5 +76,5 @@ const {
   goToPage,
   nextPage,
   prevPage,
-} = useProductList()
+} = useArticles()
 </script>

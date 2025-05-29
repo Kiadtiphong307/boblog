@@ -44,11 +44,6 @@
 <script setup lang="ts">
 import type { Article } from '~/types/article'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
-
 interface Props {
   article: Article
   formatDate: (date: string) => string
