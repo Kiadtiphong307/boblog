@@ -29,8 +29,6 @@ export function useComment() {
         headers: { Authorization: `Bearer ${token}` },
       })
       
-      // ตรวจสอบโครงสร้างข้อมูลที่ได้รับ
-      console.log('Response from API:', res)
       
       // ปรับการดึงข้อมูลให้ถูกต้อง
       if (res && typeof res === 'object') {
@@ -55,7 +53,6 @@ export function useComment() {
         comments.value = []
       }
       
-      console.log('Comments loaded:', comments.value)
     } catch (err) {
       console.error('❌ Failed to load comments:', err)
       comments.value = []
@@ -81,9 +78,7 @@ export function useComment() {
           content: newComment.value,
         },
       })
-      
-      console.log('Comment posted:', response)
-      
+        
       newComment.value = ''
       // รีเฟรช comments หลังจากโพสต์สำเร็จ
       await fetchComments()

@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { useProductForm } from '~/composables/articles/useArticles'
+import { useCreateArticle } from '~/composables/articles/useArticles'
 import { ArticelsText } from '~/constants/Articel';
 import { PlaceholdersText } from '~/constants/Placeholders';
 
@@ -87,5 +87,5 @@ const {
   error,
   success,
   handleSubmit,
-} = useProductForm()
+} = useCreateArticle()
 </script>

@@ -1,87 +1,57 @@
-import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, watch, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Article, Category } from '~/types/article'
+import { usePagination } from '~/composables/usePagination'
+import { useFilter } from '~/composables/useFilter'
 
 // 📦 Read: ดึงรายการบทความและหมวดหมู่
 export function useArticles() {
-  // raw data
-  const articles = ref<Article[]>([])
+  // Raw data
+  const allArticles = ref<Article[]>([])
   const categories = ref<Category[]>([])
-  // filters
-  const selectedCategory = ref<string | number>('')
-  const searchTerm = ref('')
-  const localSearchTerm = ref('') // for immediate v-model
   const loading = ref(true)
-  let debounceTimer: NodeJS.Timeout | null = null
-
-  // pagination state
-  const currentPage = ref(1)
-  const perPage = ref(4) // จำนวนบทความต่อหน้า
-  const totalPages = computed(() =>
-    Math.ceil(articles.value.length / perPage.value) || 1
-  )
-  const paginatedArticles = computed(() => {
-    const start = (currentPage.value - 1) * perPage.value
-    return articles.value.slice(start, start + perPage.value)
-  })
-
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages.value) {
-      currentPage.value = page
-    }
-  }
-  const nextPage = () => {
-    if (currentPage.value < totalPages.value) currentPage.value++
-  }
-  const prevPage = () => {
-    if (currentPage.value > 1) currentPage.value--
-  }
-
-  // fetch categories
+  const error = ref<string>('')
+  
+  // Setup filter functionality
+  const filter = useFilter({ debounceDelay: 500 })
+  
+  // Setup pagination functionality
+  const pagination = usePagination(allArticles, { perPage: 4 })
+  
+  // API methods
   const fetchCategories = async () => {
     try {
       const res = await $fetch<{ data: Category[] }>('/api/categories')
       categories.value = res.data || []
     } catch (err) {
       console.error('❌ Failed to load categories:', err)
+      error.value = 'ไม่สามารถโหลดหมวดหมู่ได้'
     }
   }
-
-  // fetch articles (reset to page 1 เมื่อ filter/search เปลี่ยน)
+  
   const fetchArticles = async () => {
     loading.value = true
-    currentPage.value = 1
-
-    const query = new URLSearchParams()
-    if (searchTerm.value.trim()) query.append('search', searchTerm.value.trim())
-    if (selectedCategory.value) query.append('category_id', selectedCategory.value.toString())
-
+    error.value = ''
+    
+    // Reset to first page when filters change
+    pagination.resetToFirstPage()
+    
     try {
-      const res = await $fetch<{ data: Article[] }>(`/api/articles?${query.toString()}`)
-      articles.value = res.data || []
+      const queryParams = filter.buildQueryParams()
+      const url = `/api/articles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+      
+      const res = await $fetch<{ data: Article[] }>(url)
+      allArticles.value = res.data || []
     } catch (err) {
       console.error('❌ Error loading articles:', err)
-      articles.value = []
+      allArticles.value = []
+      error.value = 'ไม่สามารถโหลดบทความได้'
     } finally {
       loading.value = false
     }
   }
-
-  // debounced search term setter
-  const debouncedSearch = (value: string) => {
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      searchTerm.value = value
-    }, 500)
-  }
-  const updateSearchTerm = (value: string) => {
-    localSearchTerm.value = value
-    debouncedSearch(value)
-  }
-  const updateSelectedCategory = (value: string | number) => {
-    selectedCategory.value = value
-  }
-
+  
+  // Utility functions
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('th-TH', {
@@ -90,48 +60,77 @@ export function useArticles() {
       day: 'numeric',
     })
   }
-
-  onUnmounted(() => {
-    if (debounceTimer) clearTimeout(debounceTimer)
+  
+  const refreshArticles = async () => {
+    await fetchArticles()
+  }
+  
+  // Initialize data and watchers
+  onMounted(async () => {
+    await Promise.all([
+      fetchCategories(),
+      fetchArticles()
+    ])
   })
-  onMounted(() => {
-    fetchCategories()
-    fetchArticles()
-  })
-  watch([searchTerm, selectedCategory], fetchArticles)
-
+  
+  // Watch for filter changes
+  watch([filter.searchTerm, filter.selectedCategory], fetchArticles)
+  
   return {
-    // เปลี่ยนให้ articles ชี้ไปที่ paginatedArticles
-    articles: paginatedArticles,
+    // Data
+    articles: pagination.paginatedItems, // Return paginated articles
+    allArticles, // Access to all articles if needed
     categories,
-    selectedCategory,
-    searchTerm: localSearchTerm,
     loading,
+    error,
+    
+    // Filter functionality
+    selectedCategory: filter.selectedCategory,
+    searchTerm: filter.localSearchTerm,
+    updateSearchTerm: filter.updateSearchTerm,
+    updateSelectedCategory: filter.updateSelectedCategory,
+    clearAllFilters: filter.clearAllFilters,
+    hasActiveFilters: filter.hasActiveFilters,
+    getFilterSummary: filter.getFilterSummary,
+    
+    // Pagination functionality
+    currentPage: pagination.currentPage,
+    totalPages: pagination.totalPages,
+    pageInfo: pagination.pageInfo,
+    goToPage: pagination.goToPage,
+    nextPage: pagination.nextPage,
+    prevPage: pagination.prevPage,
+    hasNextPage: pagination.hasNextPage,
+    hasPrevPage: pagination.hasPrevPage,
+    getPageNumbers: pagination.getPageNumbers,
+    
+    // Methods
     fetchArticles,
-    formatDate,
-    updateSearchTerm,
-    updateSelectedCategory,
-    // exports สำหรับ pagination
-    currentPage,
-    totalPages,
-    goToPage,
-    nextPage,
-    prevPage,
+    refreshArticles,
+    formatDate
   }
 }
 
 // 📝 Create: สำหรับสร้างบทความใหม่
 export function useCreateArticle() {
   const router = useRouter()
-  const title = ref('')
-  const slug = ref('')
-  const content = ref('')
-  const categoryName = ref('')
-  const tags = ref('')
-  const error = ref<Record<string, string>>({})
-  const success = ref(false)
-
-  // สร้าง slug อัตโนมัติจาก title
+  
+  // Form state
+  const formData = ref({
+    title: '',
+    slug: '',
+    content: '',
+    categoryName: '',
+    tags: ''
+  })
+  
+  const formState = ref({
+    error: {} as Record<string, string>,
+    success: false,
+    loading: false
+  })
+  
+  // Auto-generate slug from title
   const slugify = (text: string): string =>
     text
       .toLowerCase()
@@ -140,65 +139,141 @@ export function useCreateArticle() {
       .replace(/[^\p{L}\p{N}\s-]/gu, '')
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '')
-
-  watch(title, (newTitle) => {
-    slug.value = slugify(newTitle)
+  
+  // Watch title changes to update slug
+  watch(() => formData.value.title, (newTitle) => {
+    formData.value.slug = slugify(newTitle)
   })
-
-  // ส่งคำขอเพื่อสร้างบทความใหม่
+  
+  // Form validation
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    
+    if (!formData.value.title.trim()) {
+      errors.title = 'กรุณาใส่ชื่อบทความ'
+    }
+    
+    if (!formData.value.content.trim()) {
+      errors.content = 'กรุณาใส่เนื้อหาบทความ'
+    }
+    
+    if (!formData.value.categoryName.trim()) {
+      errors.categoryName = 'กรุณาใส่ชื่อหมวดหมู่'
+    }
+    
+    formState.value.error = errors
+    return Object.keys(errors).length === 0
+  }
+  
+  // Reset form
+  const resetForm = () => {
+    formData.value = {
+      title: '',
+      slug: '',
+      content: '',
+      categoryName: '',
+      tags: ''
+    }
+    formState.value = {
+      error: {},
+      success: false,
+      loading: false
+    }
+  }
+  
+  // Submit form
   const handleSubmit = async () => {
-    error.value = {}
-    success.value = false
-
-    const token = localStorage.getItem('token')
-    if (!token) {
-      error.value.general = 'คุณต้องเข้าสู่ระบบก่อนสร้างบทความ'
+    formState.value.error = {}
+    formState.value.success = false
+    
+    // Validate form
+    if (!validateForm()) {
       return
     }
-
+    
+    // Check authentication
+    const token = localStorage.getItem('token')
+    if (!token) {
+      formState.value.error.general = 'คุณต้องเข้าสู่ระบบก่อนสร้างบทความ'
+      return
+    }
+    
+    formState.value.loading = true
+    
     try {
+      const payload = {
+        title: formData.value.title.trim(),
+        slug: formData.value.slug.trim(),
+        content: formData.value.content.trim(),
+        category_name: formData.value.categoryName.trim(),
+        tag_names: formData.value.tags 
+          ? formData.value.tags.split(',').map(t => t.trim()).filter(Boolean) 
+          : []
+      }
+      
       await $fetch('/api/articles', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: {
-          title: title.value,
-          slug: slug.value,
-          content: content.value,
-          category_name: categoryName.value,
-          tag_names: tags.value ? tags.value.split(',').map((t) => t.trim()).filter(Boolean) : [],
-        },
+        body: payload
       })
-
-      success.value = true
-      title.value = ''
-      slug.value = ''
-      content.value = ''
-      categoryName.value = ''
-      tags.value = ''
-
-      setTimeout(() => router.push('/articles'), 1500)
+      
+      formState.value.success = true
+      
+      // Reset form after success
+      setTimeout(() => {
+        resetForm()
+        router.push('/articles')
+      }, 1500)
+      
     } catch (e: any) {
       if (e?.data?.errors) {
-        error.value = e.data.errors
+        formState.value.error = e.data.errors
       } else if (e?.data?.error) {
-        error.value.general = e.data.error
+        formState.value.error.general = e.data.error
       } else {
-        error.value.general = '❌ เกิดข้อผิดพลาดในการสร้างบทความ'
+        formState.value.error.general = '❌ เกิดข้อผิดพลาดในการสร้างบทความ'
       }
+    } finally {
+      formState.value.loading = false
     }
   }
-
+  
   return {
-    title,
-    slug,
-    content,
-    categoryName,
-    tags,
-    error,
-    success,
+    // Form data
+    formData,
+    
+    // Individual form fields for easier v-model binding
+    title: computed({
+      get: () => formData.value.title,
+      set: (value: string) => formData.value.title = value
+    }),
+    slug: computed({
+      get: () => formData.value.slug,
+      set: (value: string) => formData.value.slug = value
+    }),
+    content: computed({
+      get: () => formData.value.content,
+      set: (value: string) => formData.value.content = value
+    }),
+    categoryName: computed({
+      get: () => formData.value.categoryName,
+      set: (value: string) => formData.value.categoryName = value
+    }),
+    tags: computed({
+      get: () => formData.value.tags,
+      set: (value: string) => formData.value.tags = value
+    }),
+    
+    // Form state
+    error: computed(() => formState.value.error),
+    success: computed(() => formState.value.success),
+    loading: computed(() => formState.value.loading),
+    
+    // Methods
     handleSubmit,
+    resetForm,
+    validateForm
   }
 }
-
