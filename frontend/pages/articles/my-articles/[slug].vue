@@ -1,97 +1,135 @@
-<script setup lang="ts">
-import { useEditArticles } from '~/composables/articles/useEditArticles'
-
-const {
-  title,
-  content,
-  selectedCategory,
-  selectedTags,
-  tagInput,
-  showSuggestions,
-  categories,
-  tags,
-  loading,
-  error,
-  filteredTagSuggestions,
-  handleBlur,
-  handleTagInput,
-  selectTag,
-  removeTag,
-  updateArticle,
-} = useEditArticles()
-</script>
-
 <template>
   <div class="max-w-4xl mx-auto py-10 px-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8 border-b pb-4">✏️ แก้ไขบทความ</h1>
-
-    <div v-if="loading" class="text-gray-500 text-center py-6">⏳ กำลังโหลด...</div>
-    <div v-if="error" class="text-red-600 bg-red-100 p-4 rounded mb-6">{{ error }}</div>
-
-    <form @submit.prevent="updateArticle" v-if="!loading" class="space-y-6">
-      <!-- Title -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">หัวข้อบทความ</label>
-        <input v-model="title" type="text"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" required />
+    <!-- Article Content -->
+    <div v-if="article" class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-4">{{ article.title }}</h1>
+      <div class="prose max-w-none">
+        <div v-html="article.content"></div>
       </div>
+    </div>
 
-      <!-- Content -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">เนื้อหา</label>
-        <textarea v-model="content" rows="10"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" required></textarea>
-      </div>
+    <!-- Comments Section -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        💬 ความคิดเห็น ({{ comments.length }})
+      </h2>
 
-      <!-- Category -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
-        <select v-model="selectedCategory"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-200" required>
-          <option value="" disabled>-- เลือกหมวดหมู่ --</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Tags -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-
-        <div class="flex flex-wrap gap-2 mb-2">
-          <span v-for="tag in selectedTags" :key="tag.id || tag.name"
-            class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center text-sm">
-            {{ tag.name }}
-            <button type="button" class="ml-2 text-blue-500 hover:text-red-500" @click="removeTag(tag)">
-              ✕
-            </button>
-          </span>
-        </div>
-
-        <div class="relative">
-          <input v-model="tagInput" @keydown.enter.prevent="handleTagInput" @keydown.tab.prevent="handleTagInput"
-            @focus="showSuggestions = true" @blur="handleBlur" type="text" placeholder="พิมพ์แท็ก เช่น Go, Docker, Vue"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400" />
-
-          <!-- Dropdown Suggestion -->
-          <ul v-if="showSuggestions && filteredTagSuggestions.length > 0"
-            class="absolute z-10 bg-white border border-gray-300 w-full mt-1 rounded-md shadow-lg max-h-48 overflow-auto">
-            <li v-for="tag in filteredTagSuggestions" :key="tag.id" @mousedown.prevent="selectTag(tag)"
-              class="px-4 py-2 cursor-pointer hover:bg-blue-100">
-              {{ tag.name }}
-            </li>
-          </ul>
+      <!-- Add New Comment Form -->
+      <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+        <h3 class="font-semibold text-gray-700 mb-3">✍️ แสดงความคิดเห็น</h3>
+        <textarea 
+          v-model="newComment"
+          rows="4"
+          placeholder="แสดงความคิดเห็นของคุณ..."
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
+        ></textarea>
+        <div class="flex justify-end mt-3">
+          <button
+            @click="submitComment"
+            :disabled="!newComment.trim()"
+            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-6 rounded-lg transition"
+          >
+            📝 ส่งความคิดเห็น
+          </button>
         </div>
       </div>
 
-      <!-- Save Button -->
-      <div class="text-right">
-        <button type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition">
-          💾 บันทึกการแก้ไข
-        </button>
+      <!-- Comments List -->
+      <div v-if="comments.length > 0" class="space-y-4">
+        <div 
+          v-for="comment in comments" 
+          :key="comment.id"
+          class="border-l-4 border-blue-200 pl-4 py-4 bg-gray-50 rounded-r-lg"
+        >
+          <!-- Comment Header -->
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center space-x-2">
+              <span class="font-semibold text-gray-800">
+                {{ comment.user?.username }}
+              </span>
+              <span class="text-sm text-gray-500">
+                {{ formatDate(comment.created_at) }}
+              </span>
+              <span v-if="comment.updated_at && comment.updated_at !== comment.created_at" 
+                    class="text-xs text-gray-400 italic">
+                (แก้ไขแล้ว)
+              </span>
+            </div>
+            
+            <!-- Action Buttons (แสดงเฉพาะเจ้าของคอมเมนต์) -->
+            <div v-if="isCommentOwner(comment)" class="flex space-x-2">
+              <button
+                @click="startEditComment(comment)"
+                class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                ✏️ แก้ไข
+              </button>
+              <button
+                @click="deleteComment(comment.id)"
+                class="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                🗑️ ลบ
+              </button>
+            </div>
+          </div>
+
+          <!-- Comment Content -->
+          <div v-if="editingCommentId !== comment.id">
+            <p class="text-gray-700 leading-relaxed">{{ comment.content }}</p>
+          </div>
+
+          <!-- Edit Form -->
+          <div v-else class="space-y-3">
+            <textarea 
+              v-model="editContent"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
+            ></textarea>
+            <div class="flex space-x-2">
+              <button
+                @click="saveEditComment(comment.id)"
+                :disabled="!editContent.trim()"
+                class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium py-1 px-3 rounded transition"
+              >
+                💾 บันทึก
+              </button>
+              <button
+                @click="cancelEdit"
+                class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium py-1 px-3 rounded transition"
+              >
+                ❌ ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </form>
+
+      <!-- No Comments Message -->
+      <div v-else class="text-center py-8 text-gray-500">
+        <p class="text-lg">📝 ยังไม่มีความคิดเห็น</p>
+        <p class="text-sm">เป็นคนแรกที่แสดงความคิดเห็นในบทความนี้!</p>
+      </div>
+    </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useComment } from '~/composables/useComment'
+
+const {
+  article,
+  comments,
+  newComment,
+  editingCommentId,
+  editContent,
+  fetchArticle,
+  fetchComments,
+  submitComment,
+  startEditComment,
+  cancelEdit,
+  saveEditComment,
+  deleteComment,
+  isCommentOwner,
+  formatDate,
+} = useComment()
+</script>
