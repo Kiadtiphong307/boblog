@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -39,9 +38,9 @@ func ValidateStructArticle(data interface{}) map[string]string {
 		field := strings.ToLower(e.Field())
 		switch e.Tag() {
 		case "required":
-			errors[field] = "จำเป็นต้องกรอก"
+			errors[field] = "required"
 		default:
-			errors[field] = fmt.Sprintf("ข้อมูลไม่ถูกต้อง")
+			errors[field] = "invalid data"
 		}
 	}
 	return errors

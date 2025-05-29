@@ -25,7 +25,7 @@
       </NuxtLink>
 
       <NuxtLink
-        :to="`/articles/my-articles/${article.slug}`"
+        :to="`/articles/my-articles/edit/${article.slug}`"
         class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-1.5 rounded transition"
       >
         ✏️ แก้ไข

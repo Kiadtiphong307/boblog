@@ -25,8 +25,6 @@ export const useLogin = () => {
       if (res.ok && json.data.token) {
         // ✅ เก็บ token
         localStorage.setItem('token', json.data.token)
-        
-        // ✅ เก็บข้อมูล user (จุดสำคัญที่ขาดไป!)
         if (json.data.user) {
           localStorage.setItem('user', JSON.stringify(json.data.user))
         }

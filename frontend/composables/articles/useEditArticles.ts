@@ -27,7 +27,7 @@ export function useEditArticles() {
     loading.value = true
     try {
       const token = localStorage.getItem('token')
-      const res = await $fetch<{ data: any }>(`${API_ROUTES.ARTICLES.article_detail}`, {  
+      const res = await $fetch<{ data: any }>(`/api/articles/${slug}`, {  
         headers: { Authorization: `Bearer ${token}` },
       })
       const article = res.data
