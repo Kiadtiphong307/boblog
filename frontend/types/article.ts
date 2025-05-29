@@ -31,6 +31,7 @@ export interface Article {
     updated_at: string
     user?: {
       username: string
+      id: number
     }
     
   }

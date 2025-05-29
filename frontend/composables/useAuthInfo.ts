@@ -27,6 +27,17 @@ export function useAuthInfo() {
       if (res.ok) {
         nickname.value = json.data.nickname
         imageUrl.value = json.data.image || null
+        
+        // ✅ อัพเดตข้อมูล user ใน localStorage ด้วย
+        const userData = {
+          id: json.data.id,
+          username: json.data.username,
+          nickname: json.data.nickname,
+          email: json.data.email,
+          image: json.data.image
+        }
+        localStorage.setItem('user', JSON.stringify(userData))
+        console.log('💾 User data updated:', userData)
       }
     } catch (err) {
       console.error('ไม่สามารถโหลดข้อมูลผู้ใช้:', err)
@@ -34,10 +45,18 @@ export function useAuthInfo() {
   }
 
   const logout = () => {
+    // ✅ ลบทั้ง token และ user data
     localStorage.removeItem('token')
+    localStorage.removeItem('user')  // ← เพิ่มบรรทัดนี้!
+    
+    // หรือใช้ localStorage.clear() เพื่อลบทั้งหมด
+    // localStorage.clear()
+    
     token.value = null
     nickname.value = null
     imageUrl.value = null
+    
+    console.log('🔓 Logged out - localStorage cleared')
     router.push('/')
   }
 

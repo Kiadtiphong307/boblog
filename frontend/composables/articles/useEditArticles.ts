@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-
+import { API_ROUTES } from '~/constants/api/route'
 export function useEditArticles() {
   const route = useRoute()
   const router = useRouter()
@@ -27,7 +27,7 @@ export function useEditArticles() {
     loading.value = true
     try {
       const token = localStorage.getItem('token')
-      const res = await $fetch<{ data: any }>(`/api/articles/${slug}`, {
+      const res = await $fetch<{ data: any }>(`${API_ROUTES.ARTICLES.article_detail}`, {  
         headers: { Authorization: `Bearer ${token}` },
       })
       const article = res.data
@@ -105,7 +105,7 @@ export function useEditArticles() {
   const updateArticle = async () => {
     try {
       const token = localStorage.getItem('token')
-      await $fetch(`/api/articles/${slug}`, {
+      await $fetch(`${API_ROUTES.ARTICLES.article_detail}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,

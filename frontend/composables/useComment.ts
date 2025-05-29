@@ -174,17 +174,26 @@ const deleteComment = async (commentId: number) => {
 }
 
     // ตรวจสอบว่าเป็นเจ้าของคอมเมนต์หรือไม่
-    const isCommentOwner = (comment: Comment) => {
-      const userStr = localStorage.getItem('user')
-      if (!userStr) return false
-      
-      try {
-        const user = JSON.parse(userStr)
-        return user.username === comment.user?.username
-      } catch {
-        return false
-      }
-    }
+// วิธีง่ายๆ - ใช้ username เปรียบเทียบ
+const isCommentOwner = (comment: Comment) => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) return false
+  
+  try {
+    const currentUser = JSON.parse(userStr)
+    
+    // เปรียบเทียบ username (จาก debug ข้างบนเห็นว่ามี username)
+    const isOwner = currentUser.username === comment.user?.username
+    
+    console.log('Current Username:', currentUser.username)
+    console.log('Comment Username:', comment.user?.username) 
+    console.log('Is Owner?', isOwner)
+    
+    return isOwner
+  } catch {
+    return false
+  }
+}
   
     const formatDate = (iso: string) =>
       new Date(iso).toLocaleString('th-TH', {
