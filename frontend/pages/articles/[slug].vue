@@ -123,8 +123,6 @@ const {
   newComment,
   editingCommentId,
   editContent,
-  fetchArticle,
-  fetchComments,
   submitComment,
   startEditComment,
   cancelEdit,

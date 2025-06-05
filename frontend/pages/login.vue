@@ -9,7 +9,7 @@
           class="input input-bordered w-full" />
         <input v-model="password" type="password" :placeholder="PlaceholdersLogin.password" required
           class="input input-bordered w-full" />
-        <button type="submit" class="btn btn-primary w-full">
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
           เข้าสู่ระบบ
         </button>
       </form>

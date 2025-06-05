@@ -1,6 +1,8 @@
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 export const useRegister = () => {
+  const router = useRouter()
   const form = ref({
     username: '',
     email: '',
@@ -47,6 +49,13 @@ export const useRegister = () => {
       if (res.ok) {
         success.value = '✅ สมัครสมาชิกสำเร็จ'
         resetForm()
+        
+      
+        alert('✅ สมัครสมาชิกสำเร็จ')
+        setTimeout(() => {
+          router.push('/login')
+        }, 1000)
+        
       } else {
         if (json.errors && typeof json.errors === 'object') {
           error.value = json.errors
@@ -54,10 +63,11 @@ export const useRegister = () => {
           error.value.general = json.error || '❌ เกิดข้อผิดพลาดในการสมัคร'
         }
       }
+      
     } catch (err) {
       error.value.general = '❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'
     }
-  }
+}
 
   return {
     form,

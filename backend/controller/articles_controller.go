@@ -2,15 +2,15 @@ package controller
 
 import (
 	service "backend/service"
+
 	"github.com/gofiber/fiber/v2"
 )
-
-
 
 // คือฟังก์ชันที่จะดึงข้อมูลบทความทั้งหมดจากฐานข้อมูล
 func GetAllArticles(c *fiber.Ctx) error {
 	return service.HandleGetAllArticles(c)
 }
+
 // คือฟังก์ชันที่จะค้นหาบทความตามหมวดหมู่และแท็ก
 func SearchArticlesTags(c *fiber.Ctx) error {
 	return service.HandleSearchArticlesTags(c)
@@ -22,7 +22,7 @@ func GetArticleBySlug(c *fiber.Ctx) error {
 }
 
 // CRUD Write Article
-// คือฟังก์ชันที่จะดึงข้อมูลบทความของผู้ใช้งานปัจจุบัน 
+// คือฟังก์ชันที่จะดึงข้อมูลบทความของผู้ใช้งานปัจจุบัน
 func GetMyArticles(c *fiber.Ctx) error {
 	return service.HandleGetMyArticles(c)
 }

@@ -14,16 +14,16 @@ import (
 	"gorm.io/gorm"
 )
 
+
+
 // คือฟังก์ชันที่จะดึงข้อมูลบทความทั้งหมดจากฐานข้อมูล
 func HandleGetAllArticles(c *fiber.Ctx) error {
-	var articles []models.Article
-	err := database.DB.
-		Preload("Author").
+		var articles []models.Article
+	if err := database.DB.Preload("Author").
 		Preload("Category").
 		Preload("Tags").
 		Preload("Comments").
-		Find(&articles).Error
-	if err != nil {
+		Find(&articles).Error; err != nil {
 		log.Println("❌ Error getting all articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to get articles"))
 	}
@@ -33,8 +33,8 @@ func HandleGetAllArticles(c *fiber.Ctx) error {
 // คือฟังก์ชันที่จะค้นหาบทความทั้งหมดจากฐานข้อมูล
 func HandleSearchArticlesTags(c *fiber.Ctx) error {
 	var articles []models.Article
-	search := c.Query("search")
-	categoryID := c.Query("category_id")
+	search, categoryID := c.Query("search"), c.Query("category_id")
+	
 	tx := database.DB.Model(&models.Article{}).
 		Joins("LEFT JOIN article_tags ON article_tags.article_id = articles.id").
 		Joins("LEFT JOIN tags ON tags.id = article_tags.tags_id").
@@ -43,16 +43,16 @@ func HandleSearchArticlesTags(c *fiber.Ctx) error {
 		Preload("Tags").Distinct()
 
 	if search != "" {
-		keywords := strings.Fields(strings.ToLower(search))
-		for _, kw := range keywords {
-			tx = tx.Where(`LOWER(articles.title) LIKE ? OR LOWER(articles.content) LIKE ? OR LOWER(tags.name) LIKE ?`, "%"+kw+"%", "%"+kw+"%", "%"+kw+"%")
+		for _, kw := range strings.Fields(strings.ToLower(search)) {
+			tx = tx.Where(`LOWER(articles.title) LIKE ? OR LOWER(articles.content) LIKE ? OR LOWER(tags.name) LIKE ?`, 
+				"%"+kw+"%", "%"+kw+"%", "%"+kw+"%")
 		}
 	}
 	if categoryID != "" {
 		tx = tx.Where("articles.category_id = ?", categoryID)
 	}
+	
 	if err := tx.Order("articles.created_at DESC").Find(&articles).Error; err != nil {
-		log.Println("❌ Error filtering articles:", err)
 		return c.Status(500).JSON(utils.ErrorResponse("Failed to filter articles"))
 	}
 	return c.JSON(utils.SuccessResponse(articles, "Filtered articles retrieved"))
@@ -60,20 +60,21 @@ func HandleSearchArticlesTags(c *fiber.Ctx) error {
 
 // คือฟังก์ชันที่จะดึงข้อมูลบตามslug
 func HandleGetArticleBySlug(c *fiber.Ctx) error {
-	slugParam := c.Params("slug")
-	slug, err := url.PathUnescape(slugParam)
+	slug, err := url.PathUnescape(c.Params("slug"))
 	if err != nil {
 		return c.Status(400).JSON(utils.ErrorResponse("Invalid slug format"))
 	}
+	
 	var article models.Article
-	err = database.DB.Preload("Author").
-		Preload("Category").
-		Preload("Tags").
-		Preload("Comments").
-		First(&article, "slug = ?", slug).Error
-	if err != nil {
+	if err := database.DB.
+	Preload("Author").
+	Preload("Category").
+	Preload("Tags").
+	Preload("Comments").
+	First(&article, "slug = ?", slug).Error; err != nil {
 		return c.Status(404).JSON(utils.ErrorResponse("Article not found"))
 	}
+	
 	return c.JSON(utils.SuccessResponse(article, "Article retrieved successfully"))
 }
 
