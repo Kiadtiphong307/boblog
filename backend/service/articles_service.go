@@ -78,7 +78,7 @@ func HandleGetArticleBySlug(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(article, "Article retrieved successfully"))
 }
 
-// คือฟังก์ชันที่จะดึงข้อมูลบทความทั้งหมดจากฐานข้อมูล
+// คือฟังก์ชันที่จะดึงข้อมูลบทความ เจ้าของบทความ
 func HandleGetMyArticles(c *fiber.Ctx) error {
 	userID, err := composables.GetCurrentUserID(c)
 	if err != nil {

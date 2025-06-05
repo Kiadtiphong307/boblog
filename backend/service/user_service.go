@@ -6,30 +6,29 @@ import (
 	"backend/models"
 	"backend/utils"
 	"backend/validation"
+	
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
-	"os"
-	"time"
 	"strings"
 )
 
+// register user
 func HandleRegister(c *fiber.Ctx) error {
 	var input validation.RegisterInput
 	if err := c.BodyParser(&input); err != nil {
-		return c.Status(400).JSON(utils.ErrorResponse("❌ ไม่สามารถอ่านข้อมูลจากแบบฟอร์มได้"))
+		return c.Status(400).JSON(utils.ErrorResponse("Failed to read form data")) 
 	}
 	if errs := validation.ValidateStructRegister(input); errs != nil {
 		return c.Status(400).JSON(fiber.Map{"errors": errs})
 	}
 	if input.Password != input.ConfirmPassword {
-		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"confirm_password": "รหัสผ่านไม่ตรงกัน"}})
+		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"confirm_password": "Password does not match"}})
 	}
 	if exists, _ := composables.IsEmailExists(input.Email); exists {
-		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"email": "อีเมลนี้มีผู้ใช้งานแล้ว"}})
+		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"email": "Email already exists"}})
 	}
 	if exists, _ := composables.IsUsernameExists(input.Username); exists {
-		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"username": "ชื่อผู้ใช้นี้มีผู้ใช้งานแล้ว"}})
+		return c.Status(400).JSON(fiber.Map{"errors": map[string]string{"username": "Username already exists"}})
 	}
 
 	hashedPassword := utils.HashPassword(input.Password)
@@ -42,16 +41,17 @@ func HandleRegister(c *fiber.Ctx) error {
 		PasswordHash: hashedPassword,
 	}
 	if err := database.DB.Create(&user).Error; err != nil {
-		return c.Status(500).JSON(utils.ErrorResponse("❌ ไม่สามารถสร้างบัญชีผู้ใช้ได้"))
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to create user"))
 	}
 	user.PasswordHash = ""
-	return c.Status(201).JSON(utils.SuccessResponse(user, "✅ สมัครสมาชิกสำเร็จ"))
+	return c.Status(201).JSON(utils.SuccessResponse(user, "Register successful"))
 }
 
+// login user
 func HandleLogin(c *fiber.Ctx) error {
 	var input validation.LoginInput
 	if err := c.BodyParser(&input); err != nil {
-		return c.Status(400).JSON(utils.ErrorResponse("Invalid input"))
+		return c.Status(400).JSON(utils.ErrorResponse("Failed to read form data"))
 	}
 	if errs := validation.ValidateStructLogin(input); errs != nil {
 		return c.Status(400).JSON(fiber.Map{"errors": errs})
@@ -62,21 +62,18 @@ func HandleLogin(c *fiber.Ctx) error {
 		Where("email = ? OR username = ?", input.EmailOrUsername, input.EmailOrUsername).
 		First(&user)
 	if user.ID == 0 || !utils.CheckPassword(input.Password, user.PasswordHash) {
-		return c.Status(400).JSON(utils.ErrorResponse("Invalid credentials"))
+		return c.Status(400).JSON(utils.ErrorResponse("Invalid email or password"))
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":    user.ID,
-		"email": user.Email,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
-	})
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	tokenString, err := utils.GenerateJWT(user.ID, user.Email, "user") 
 	if err != nil {
-		return c.SendStatus(500)
+		return c.Status(500).JSON(utils.ErrorResponse("Failed to generate token"))
 	}
+
 	return c.JSON(utils.SuccessResponse(fiber.Map{"token": tokenString}, "Login successful"))
 }
 
+// get user profile
 func HandleProfile(c *fiber.Ctx) error {
 	userID, err := composables.ExtractUserIDFromJWT(c)
 	if err != nil {
@@ -90,6 +87,7 @@ func HandleProfile(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(user, "Current user"))
 }
 
+// update user profile
 func HandleUpdateProfile(c *fiber.Ctx) error {
 	userID, err := composables.ExtractUserIDFromJWT(c)
 	if err != nil {

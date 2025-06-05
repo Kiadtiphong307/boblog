@@ -4,82 +4,152 @@ import type { Article, Category } from '~/types/article'
 import { usePagination } from '~/composables/usePagination'
 import { useFilter } from '~/composables/useFilter'
 
-// 📦 Read: ดึงรายการบทความและหมวดหมู่
-export function useArticles() {
-  // Raw data
+
+// Format date to Thai locale string
+export const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+// Convert text to URL-friendly slug
+export const slugify = (text: string): string =>
+  text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+// Fetch categories from API
+export const fetchCategoriesAPI = async () => {
+  try {
+    const res = await $fetch<{ data: Category[] }>('/api/categories')
+    return { data: res.data || [], error: null }
+  } catch (err) {
+    console.error('❌ Failed to load categories:', err)
+    return { data: [], error: 'ไม่สามารถโหลดหมวดหมู่ได้' }
+  }
+}
+
+// Fetch articles from API with query parameters
+export const fetchArticlesAPI = async (queryParams: URLSearchParams) => {
+  try {
+    const url = `/api/articles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+    const res = await $fetch<{ data: Article[] }>(url)
+    return { data: res.data || [], error: null }
+  } catch (err) {
+    console.error('❌ Error loading articles:', err)
+    return { data: [], error: 'ไม่สามารถโหลดบทความได้' }
+  }
+}
+
+// Create new article via API
+export const createArticleAPI = async (payload: any, token: string) => {
+  try {
+    const response = await $fetch('/api/articles', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: payload
+    })
+    return { success: true, error: null }
+  } catch (e: any) {
+    let error = '❌ เกิดข้อผิดพลาดในการสร้างบทความ'
+    
+    if (e?.data?.errors) {
+      return { success: false, error: e.data.errors }
+    } else if (e?.data?.error) {
+      error = e.data.error
+    }
+    
+    return { success: false, error: { general: error } }
+  }
+}
+
+// Article List Management
+export function useArticleListState() {
   const allArticles = ref<Article[]>([])
   const categories = ref<Category[]>([])
   const loading = ref(true)
   const error = ref<string>('')
   
-  // Setup filter functionality
   const filter = useFilter({ debounceDelay: 500 })
-  
-  // Setup pagination functionality
   const pagination = usePagination(allArticles, { perPage: 4 })
   
-  // API methods
-  const fetchCategories = async () => {
-    try {
-      const res = await $fetch<{ data: Category[] }>('/api/categories')
-      categories.value = res.data || []
-    } catch (err) {
-      console.error('❌ Failed to load categories:', err)
-      error.value = 'ไม่สามารถโหลดหมวดหมู่ได้'
-    }
+  // Load categories
+  const loadCategories = async () => {
+    const { data, error: apiError } = await fetchCategoriesAPI()
+    categories.value = data
+    if (apiError) error.value = apiError
   }
   
-  const fetchArticles = async () => {
+  // Load articles with current filters
+  const loadArticles = async () => {
     loading.value = true
     error.value = ''
-    
-    // Reset to first page when filters change
     pagination.resetToFirstPage()
     
-    try {
-      const queryParams = filter.buildQueryParams()
-      const url = `/api/articles${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
-      
-      const res = await $fetch<{ data: Article[] }>(url)
-      allArticles.value = res.data || []
-    } catch (err) {
-      console.error('❌ Error loading articles:', err)
-      allArticles.value = []
-      error.value = 'ไม่สามารถโหลดบทความได้'
-    } finally {
-      loading.value = false
-    }
+    const queryParams = filter.buildQueryParams()
+    const { data, error: apiError } = await fetchArticlesAPI(queryParams)
+    
+    allArticles.value = data
+    if (apiError) error.value = apiError
+    loading.value = false
   }
   
-  // Utility functions
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
+  return {
+    // State
+    allArticles,
+    categories,
+    loading,
+    error,
+    
+    // Filter
+    filter,
+    
+    // Pagination
+    pagination,
+    
+    // Methods
+    loadCategories,
+    loadArticles
   }
+}
+
+// Read Articles
+export function useArticles() {
+  const {
+    allArticles,
+    categories,
+    loading,
+    error,
+    filter,
+    pagination,
+    loadCategories,
+    loadArticles
+  } = useArticleListState()
   
-  const refreshArticles = async () => {
-    await fetchArticles()
-  }
-  
-  // Initialize data and watchers
+  // Initialize data on mount
   onMounted(async () => {
     await Promise.all([
-      fetchCategories(),
-      fetchArticles()
+      loadCategories(),
+      loadArticles()
     ])
   })
   
   // Watch for filter changes
-  watch([filter.searchTerm, filter.selectedCategory], fetchArticles)
+  watch([filter.searchTerm, filter.selectedCategory], loadArticles)
   
   return {
     // Data
-    articles: pagination.paginatedItems, // Return paginated articles
-    allArticles, // Access to all articles if needed
+    articles: pagination.paginatedItems,
+    allArticles,
     categories,
     loading,
     error,
@@ -105,17 +175,14 @@ export function useArticles() {
     getPageNumbers: pagination.getPageNumbers,
     
     // Methods
-    fetchArticles,
-    refreshArticles,
+    fetchArticles: loadArticles,
+    refreshArticles: loadArticles,
     formatDate
   }
 }
 
-// 📝 Create: สำหรับสร้างบทความใหม่
-export function useCreateArticle() {
-  const router = useRouter()
-  
-  // Form state
+// Article Form Management
+export function useArticleForm() {
   const formData = ref({
     title: '',
     slug: '',
@@ -131,35 +198,25 @@ export function useCreateArticle() {
   })
   
   // Auto-generate slug from title
-  const slugify = (text: string): string =>
-    text
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[^\p{L}\p{N}\s-]/gu, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-  
-  // Watch title changes to update slug
   watch(() => formData.value.title, (newTitle) => {
     formData.value.slug = slugify(newTitle)
   })
   
-  // Form validation
+  // Validation rules
+  const validationRules = {
+    title: (value: string) => !value.trim() ? 'กรุณาใส่ชื่อบทความ' : null,
+    content: (value: string) => !value.trim() ? 'กรุณาใส่เนื้อหาบทความ' : null,
+    categoryName: (value: string) => !value.trim() ? 'กรุณาใส่ชื่อหมวดหมู่' : null
+  }
+  
+  // Validate form
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
     
-    if (!formData.value.title.trim()) {
-      errors.title = 'กรุณาใส่ชื่อบทความ'
-    }
-    
-    if (!formData.value.content.trim()) {
-      errors.content = 'กรุณาใส่เนื้อหาบทความ'
-    }
-    
-    if (!formData.value.categoryName.trim()) {
-      errors.categoryName = 'กรุณาใส่ชื่อหมวดหมู่'
-    }
+    Object.entries(validationRules).forEach(([field, validator]) => {
+      const error = validator(formData.value[field as keyof typeof formData.value])
+      if (error) errors[field] = error
+    })
     
     formState.value.error = errors
     return Object.keys(errors).length === 0
@@ -181,7 +238,48 @@ export function useCreateArticle() {
     }
   }
   
-  // Submit form
+  // Prepare payload for API
+  const preparePayload = () => ({
+    title: formData.value.title.trim(),
+    slug: formData.value.slug.trim(),
+    content: formData.value.content.trim(),
+    category_name: formData.value.categoryName.trim(),
+    tag_names: formData.value.tags 
+      ? formData.value.tags.split(',').map(t => t.trim()).filter(Boolean) 
+      : []
+  })
+  
+  return {
+    formData,
+    formState,
+    validateForm,
+    resetForm,
+    preparePayload
+  }
+}
+
+// Check if user is authenticated
+export function useAuthCheck() {
+  const checkAuth = () => {
+    const token = localStorage.getItem('token')
+    return {
+      isAuthenticated: !!token,
+      token,
+      error: !token ? 'คุณต้องเข้าสู่ระบบก่อนสร้างบทความ' : null
+    }
+  }
+  
+  return { checkAuth }
+}
+
+
+// Create Article
+export function useCreateArticle() {
+  const router = useRouter()
+  const { formData, formState, validateForm, resetForm, preparePayload } = useArticleForm()
+  const { checkAuth } = useAuthCheck()
+  
+  // Handle form submission
   const handleSubmit = async () => {
     formState.value.error = {}
     formState.value.success = false
@@ -192,59 +290,35 @@ export function useCreateArticle() {
     }
     
     // Check authentication
-    const token = localStorage.getItem('token')
-    if (!token) {
-      formState.value.error.general = 'คุณต้องเข้าสู่ระบบก่อนสร้างบทความ'
+    const { isAuthenticated, token, error: authError } = checkAuth()
+    if (!isAuthenticated) {
+      formState.value.error.general = authError!
       return
     }
     
     formState.value.loading = true
     
-    try {
-      const payload = {
-        title: formData.value.title.trim(),
-        slug: formData.value.slug.trim(),
-        content: formData.value.content.trim(),
-        category_name: formData.value.categoryName.trim(),
-        tag_names: formData.value.tags 
-          ? formData.value.tags.split(',').map(t => t.trim()).filter(Boolean) 
-          : []
-      }
-      
-      await $fetch('/api/articles', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: payload
-      })
-      
+    // Submit to API
+    const payload = preparePayload()
+    const { success, error } = await createArticleAPI(payload, token!)
+    
+    if (success) {
       formState.value.success = true
       
-      // Reset form after success
+      // Navigate after success
       setTimeout(() => {
         resetForm()
         router.push('/articles')
       }, 1500)
-      
-    } catch (e: any) {
-      if (e?.data?.errors) {
-        formState.value.error = e.data.errors
-      } else if (e?.data?.error) {
-        formState.value.error.general = e.data.error
-      } else {
-        formState.value.error.general = '❌ เกิดข้อผิดพลาดในการสร้างบทความ'
-      }
-    } finally {
-      formState.value.loading = false
+    } else {
+      formState.value.error = error as Record<string, string>
     }
+    
+    formState.value.loading = false
   }
   
-  return {
-    // Form data
-    formData,
-    
-    // Individual form fields for easier v-model binding
+  // Computed properties for v-model binding
+  const computedFields = {
     title: computed({
       get: () => formData.value.title,
       set: (value: string) => formData.value.title = value
@@ -264,7 +338,13 @@ export function useCreateArticle() {
     tags: computed({
       get: () => formData.value.tags,
       set: (value: string) => formData.value.tags = value
-    }),
+    })
+  }
+  
+  return {
+    // Form data
+    formData,
+    ...computedFields,
     
     // Form state
     error: computed(() => formState.value.error),
