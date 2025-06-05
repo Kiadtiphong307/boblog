@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { API_ROUTES } from '~/constants/api/route'
+
 export function useEditArticles() {
   const route = useRoute()
   const router = useRouter()
@@ -43,7 +43,7 @@ export function useEditArticles() {
     }
   }
 
-  // Fetch categories and tags
+  // Fetch categories and tags 
   const fetchOptions = async () => {
     try {
       const token = localStorage.getItem('token')
@@ -105,7 +105,7 @@ export function useEditArticles() {
   const updateArticle = async () => {
     try {
       const token = localStorage.getItem('token')
-      await $fetch(`${API_ROUTES.ARTICLES.article_detail}`, {
+      await $fetch(`/api/articles/${slug}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,

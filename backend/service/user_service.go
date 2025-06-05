@@ -90,7 +90,6 @@ func HandleProfile(c *fiber.Ctx) error {
 	return c.JSON(utils.SuccessResponse(user, "Current user"))
 }
 
-// 
 func HandleUpdateProfile(c *fiber.Ctx) error {
 	userID, err := composables.ExtractUserIDFromJWT(c)
 	if err != nil {

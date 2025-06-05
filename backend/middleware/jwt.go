@@ -23,7 +23,7 @@ func Protected() fiber.Handler {
 
 			claims := token.Claims.(jwt.MapClaims)
 			if idFloat, ok := claims["id"].(float64); ok {
-				c.Locals("userID", uint(idFloat)) // ✅ Set userID ที่เราจะใช้งานใน Controller
+				c.Locals("userID", uint(idFloat)) //
 			}
 
 			return c.Next()

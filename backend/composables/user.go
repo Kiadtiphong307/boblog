@@ -22,6 +22,7 @@ func IsEmailExists(email string) (bool, error) {
 	}
 	return false, nil
 }
+
 // คือฟังก์ชันที่จะตรวจสอบว่าชื่อผู้ใช้งานมีอยู่แล้วหรือไม่
 func IsUsernameExists(username string) (bool, error) {
 	var user models.User
@@ -54,6 +55,7 @@ func ExtractUserIDFromJWT(c *fiber.Ctx) (uint, error) {
 	}
 	return uint(idFloat), nil
 }
+
 // คือฟังก์ชันที่จะอัปเดตรูปภาพผู้ใช้
 func HandleAvatarUpload(c *fiber.Ctx, userID uint) (*string, error) {
 	file, err := c.FormFile("avatar")
