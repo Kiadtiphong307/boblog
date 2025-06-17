@@ -59,22 +59,6 @@
           ถัดไป →
         </button>
       </div>
-
-      <!-- Items per page selector -->
-      <div class="flex items-center space-x-2 text-sm text-gray-600">
-        <label for="itemsPerPage">แสดงต่อหน้า:</label>
-        <select
-          id="itemsPerPage"
-          v-model="itemsPerPage"
-          @change="setItemsPerPage(itemsPerPage)"
-          class="border border-gray-300 rounded px-2 py-1"
-        >
-          <option :value="3">3</option>
-          <option :value="6">6</option>
-          <option :value="9">9</option>
-          <option :value="12">12</option>
-        </select>
-      </div>
     </div>
   </div>
 </template>
